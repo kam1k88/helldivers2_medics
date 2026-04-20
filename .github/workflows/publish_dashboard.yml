@@ -3,7 +3,8 @@ name: Publish Dashboard
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "2-59/5 * * * *"
+      timezone: "Europe/Moscow"
 
 permissions:
   contents: write
