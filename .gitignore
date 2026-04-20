@@ -1,0 +1,18 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+.idea/
+.DS_Store
+
+# Local runtime artifacts
+dashboard.html
+medicdivers.db
+animations/
+.medcrit_state*.json
+
+# Logs and temp
+*.log
+tmp/
+temp/

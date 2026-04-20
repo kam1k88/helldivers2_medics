@@ -1,0 +1,61 @@
+name: Publish Dashboard
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/15 * * * *"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Build dashboard
+        env:
+          AUTO_OPEN_DASHBOARD: "0"
+          SAMPLE_SECONDS: "300"
+          DASHBOARD_OUTPUT: "public/index.html"
+          REQUEST_TIMEOUT: "90"
+          REQUEST_RETRIES: "6"
+        run: |
+          mkdir -p public
+          python main.py
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > public/generated_at_utc.txt
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
