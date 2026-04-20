@@ -432,7 +432,11 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
     links = []
     for w in WINDOWS:
         file_name = f"animation_{w}_today.html"
-        if (PUBLIC_DIR / file_name).exists():
+        rows = today_rows_by_window.get(w, [])
+        if (PUBLIC_DIR / file_name).exists() and rows:
+            last_ts = str(rows[-1].get("timestamp", "n/a"))
+            links.append(f'<li><a href="{file_name}">Worker {w//60} min (today)</a> — last frame UTC: {last_ts}</li>')
+        elif (PUBLIC_DIR / file_name).exists():
             links.append(f'<li><a href="{file_name}">Worker {w//60} min (today)</a></li>')
         else:
             links.append(f"<li>Worker {w//60} min (today): пока нет данных</li>")
