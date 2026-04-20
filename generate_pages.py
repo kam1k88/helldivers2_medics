@@ -23,6 +23,7 @@ WINDOWS = [300, 900, 1800]
 TOP_N = int(os.getenv("PAGES_TOP_N", "12"))
 TZ_NAME = os.getenv("PAGES_TZ", "Europe/Moscow")
 ARCHIVE_DAYS_TO_PUBLISH = int(os.getenv("PAGES_ARCHIVE_DAYS_TO_PUBLISH", "30"))
+UPDATE_GRACE_SECONDS = int(os.getenv("PAGES_UPDATE_GRACE_SECONDS", "180"))
 
 DATA_DIR = Path(".pages_data")
 PUBLIC_DIR = Path("public")
@@ -57,6 +58,13 @@ def _iso_now_utc() -> str:
 
 def _safe_div(n: float, d: float) -> float:
     return 0.0 if d == 0 else n / d
+
+
+def _should_refresh_window(now_dt: datetime, window_seconds: int) -> bool:
+    if window_seconds <= 300:
+        return True
+    phase = int(now_dt.timestamp()) % int(window_seconds)
+    return phase <= UPDATE_GRACE_SECONDS
 
 
 def _write_json(path: Path, payload: Any) -> None:
@@ -345,7 +353,7 @@ def _render_animation(
         margin=dict(l=90, r=150, t=130, b=100),
         title=(
             f"MedicDivers Animated Dashboard {title_suffix}"
-            f"<br><sup>Window: {window_seconds // 60} min | Frames: {len(run_rows)} | Updated UTC: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}</sup>"
+            f"<br><sup>Window: {window_seconds // 60} min | Frames: {len(run_rows)} | Last frame UTC: {str(run_rows[-1].get("timestamp", "n/a"))}</sup>"
         ),
         updatemenus=[
             {
@@ -513,12 +521,13 @@ def main() -> int:
     _write_jsonl(SNAPSHOTS_FILE, snapshots)
 
     today_rows_by_window: Dict[int, List[Dict[str, Any]]] = {}
+    refreshed_windows: List[int] = []
     for w in WINDOWS:
         base = _select_base_snapshot(snapshots, now_utc_dt, w)
         history_rows = _read_jsonl(_history_file(w))
         history_rows = [r for r in history_rows if _local_day(str(r.get("timestamp", "")), tz) == current_day]
 
-        if base is not None:
+        if base is not None and _should_refresh_window(now_utc_dt, w):
             old_snap = _snapshot_from_payload(base["snapshots"])
             elapsed = max(1.0, (now_utc_dt - _parse_ts(str(base["timestamp"]))).total_seconds())
             priorities = core.build_priorities(old_snap, curr_snap, elapsed, state_file=str(_state_file(w)))
@@ -531,13 +540,14 @@ def main() -> int:
             )
             history_rows = history_rows[-400:]
             _write_jsonl(_history_file(w), history_rows)
+            refreshed_windows.append(w)
         today_rows_by_window[w] = history_rows
 
     _publish_archive_to_public(tz)
     _render_worker_today_pages(today_rows_by_window, now_utc=now_utc, day_local=current_day)
 
     _write_json(META_FILE, {"current_day": current_day, "updated_at_utc": now_utc})
-    print(f"Generated pages for day={current_day}, windows={WINDOWS}")
+    print(f"Generated pages for day={current_day}, refreshed={refreshed_windows}, windows={WINDOWS}")
     return 0
 
 
