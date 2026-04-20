@@ -3,10 +3,10 @@ name: Publish Dashboard
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "*/5 * * * *"
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -21,6 +21,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -34,15 +37,23 @@ jobs:
 
       - name: Build dashboard
         env:
-          AUTO_OPEN_DASHBOARD: "0"
-          SAMPLE_SECONDS: "300"
-          DASHBOARD_OUTPUT: "public/index.html"
+          PAGES_TZ: "Europe/Moscow"
           REQUEST_TIMEOUT: "90"
           REQUEST_RETRIES: "6"
         run: |
-          mkdir -p public
-          python main.py
-          date -u +"%Y-%m-%dT%H:%M:%SZ" > public/generated_at_utc.txt
+          python generate_pages.py
+
+      - name: Commit data/state for next runs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .pages_data
+          if git diff --cached --quiet; then
+            echo "No data changes to commit"
+          else
+            git commit -m "chore(data): update pages state [skip ci]"
+            git push origin HEAD:${{ github.ref_name }}
+          fi
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

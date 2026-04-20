@@ -62,23 +62,27 @@ cd /Users/franceballin/PycharmProjects/medicdivers_service
 
 В проект добавлен workflow:
 - `.github/workflows/publish_dashboard.yml`
+- `generate_pages.py`
 
 Он:
-- запускается вручную (`workflow_dispatch`) и по расписанию (`каждые 15 минут`),
-- выполняет `main.py` с `SAMPLE_SECONDS=300`,
-- публикует `public/index.html` в GitHub Pages.
+- запускается вручную (`workflow_dispatch`) и по расписанию (`каждые 5 минут`),
+- работает как 3 виртуальных "воркера" по окнам `5/15/30` минут (`300/900/1800`),
+- генерирует для каждого окна анимированный дашборд из 6 графиков только за текущий день,
+- при смене дня архивирует вчерашние анимации и историю в `.pages_data/archive/<YYYY-MM-DD>/`,
+- публикует итоговый сайт в GitHub Pages из директории `public/`.
 
 Шаги настройки:
 1. Запушь проект в GitHub-репозиторий.
 2. В GitHub открой `Settings -> Pages`, выбери `Source: GitHub Actions`.
-3. Открой `Actions -> Publish Dashboard` и нажми `Run workflow` для первого прогона.
+3. В `Settings -> Actions -> General -> Workflow permissions` включи `Read and write permissions` (workflow коммитит `.pages_data` обратно в репозиторий для сохранения состояния между запусками).
+4. Открой `Actions -> Publish Dashboard` и нажми `Run workflow` для первого прогона.
 
 После первого успешного деплоя дашборд будет доступен по URL:
 - `https://<your-user>.github.io/<your-repo>/`
 
 Примечания:
 - GitHub Actions не является always-on сервером, это периодическая публикация статического HTML.
-- Минимальный интервал schedule в GitHub Actions — 5 минут; в этом проекте выставлено 15 минут.
+- Минимальный интервал schedule в GitHub Actions — 5 минут; в этом проекте выставлено 5 минут.
 
 ## Что показывает дашборд
 
