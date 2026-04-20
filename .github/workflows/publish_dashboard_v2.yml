@@ -3,7 +3,7 @@ name: Publish Dashboard
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "1-59/5 * * * *"
 
 permissions:
   contents: write
