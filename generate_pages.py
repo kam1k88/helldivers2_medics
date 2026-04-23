@@ -551,6 +551,9 @@ def _render_animation(
                 "bgcolor": "rgba(16, 32, 46, 0.88)",
                 "bordercolor": "rgba(120, 170, 210, 0.42)",
                 "borderwidth": 1,
+                "ticklen": 18,
+                "tickwidth": 2,
+                "tickcolor": "rgba(120, 170, 210, 0.75)",
                 "font": {"size": 15, "color": "#EAF6FF"},
                 "pad": {"r": 10, "t": 6, "b": 6},
                 "buttons": [
@@ -565,7 +568,6 @@ def _render_animation(
                 "x": 0.06,
                 "y": -0.04,
                 "len": 0.92,
-                "thickness": 0.13,
                 "pad": {"t": 38, "b": 0},
                 "bgcolor": "rgba(18, 34, 48, 0.95)",
                 "bordercolor": "rgba(120, 170, 210, 0.45)",
