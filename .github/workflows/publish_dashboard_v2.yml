@@ -35,7 +35,7 @@ jobs:
 
       - name: Build dashboard
         env:
-          PAGES_TZ: "Europe/Moscow"
+          PAGES_TZ: "UTC"
           REQUEST_TIMEOUT: "90"
           REQUEST_RETRIES: "6"
         run: |
