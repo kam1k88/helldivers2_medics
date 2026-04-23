@@ -456,7 +456,7 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
             worker_cards.append(
                 f'<a class="worker-card" href="{file_name}">'
                 f'<span class="window-badge {badge_cls}">{badge}</span>'
-                f'<span class="worker-title">Worker {w // 60} min</span>'
+                f'<span class="worker-title">Window {w // 60} min</span>'
                 f'<span class="worker-meta">Last frame UTC: {last_ts}</span>'
                 f'</a>'
             )
@@ -464,7 +464,7 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
             worker_cards.append(
                 f'<a class="worker-card" href="{file_name}">'
                 f'<span class="window-badge {badge_cls}">{badge}</span>'
-                f'<span class="worker-title">Worker {w // 60} min</span>'
+                f'<span class="worker-title">Window {w // 60} min</span>'
                 f'<span class="worker-meta">Данные скоро появятся</span>'
                 f'</a>'
             )
@@ -472,7 +472,7 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
             worker_cards.append(
                 f'<div class="worker-card muted">'
                 f'<span class="window-badge {badge_cls}">{badge}</span>'
-                f'<span class="worker-title">Worker {w // 60} min</span>'
+                f'<span class="worker-title">Window {w // 60} min</span>'
                 f'<span class="worker-meta">Пока нет данных</span>'
                 f'</div>'
             )
@@ -670,12 +670,62 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
       font-size: 0.95rem;
       transition: background .2s ease, border-color .2s ease;
     }}
-    .day-badge:hover {{ background: rgba(49, 112, 165, 0.45); border-color: rgba(110, 212, 255, 0.72); }}
+        .day-badge:hover {{ background: rgba(49, 112, 165, 0.45); border-color: rgba(110, 212, 255, 0.72); }}
+    .how-card {{
+      border: 1px solid rgba(135, 180, 220, 0.24);
+      border-radius: 14px;
+      background: var(--panel);
+      padding: 1rem;
+    }}
+    .how-title {{
+      margin: 0 0 0.5rem;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }}
+    .how-grid {{
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.7rem;
+      margin: 0.6rem 0 0.8rem;
+    }}
+    .how-step {{
+      border: 1px solid rgba(120, 170, 210, 0.25);
+      border-radius: 12px;
+      padding: 0.65rem 0.7rem;
+      background: rgba(10, 20, 30, 0.7);
+    }}
+    .how-step b {{ color: #d9ecff; }}
+    .how-step p {{ margin: 0.25rem 0 0; color: var(--muted); line-height: 1.35; }}
+    .how-formula {{
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.95rem;
+      color: #b9dfff;
+      background: rgba(10, 20, 30, 0.8);
+      border: 1px solid rgba(120, 170, 210, 0.25);
+      border-radius: 10px;
+      padding: 0.6rem 0.75rem;
+      overflow-x: auto;
+    }}
+    .how-link {{
+      display: inline-flex;
+      margin-top: 0.7rem;
+      text-decoration: none;
+      color: #e5f5ff;
+      border: 1px solid rgba(110, 212, 255, 0.6);
+      border-radius: 999px;
+      padding: 0.35rem 0.78rem;
+      background: rgba(30, 108, 160, 0.28);
+      font-weight: 700;
+    }}
+    .how-link:hover {{ background: rgba(45, 138, 198, 0.42); }}
     .empty {{ color: var(--muted); }}
     @media (max-width: 900px) {{
       .brand-row {{ grid-template-columns: 1fr; }}
       .top-grid {{ grid-template-columns: 1fr; }}
       .workers {{ grid-template-columns: 1fr; }}
+      .how-grid {{ grid-template-columns: 1fr; }}
       .top-card.leader .top-score {{ font-size: 2.45rem; }}
     }}
   </style>
@@ -687,21 +737,35 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
         <div class="brand"><img src="assets/logo_medicdivers.png" alt="MedicDivers Utilities" /></div>
         <div class="brand"><img src="assets/logo_medcrit.png" alt="MedCrit by Permacura" /></div>
       </div>
-      <h1 class="title">MedicDivers Daily Animated Dashboards</h1>
+      <h1 class="title">MedCrit Daily Animated Dashboards</h1>
       <p class="meta">Timezone: UTC (Greenwich) | Day (UTC): {day_local} | Updated UTC: {now_utc}</p>
     </section>
 
     <section class="section">
-      <h2>Top 3 MedCrit · 15 Minute Window</h2>
+      <h2>Top 3 MedCrit Now (in 15 minute window)</h2>
       <div class="top-grid">
         {''.join(top_medcrit_cards)}
       </div>
     </section>
 
     <section class="section">
-      <h2>Workers</h2>
+      <h2>Detailed MedCrit Statistics</h2>
       <div class="workers">
         {''.join(worker_cards)}
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>How MedCrit is Calculated?</h2>
+      <div class="how-card">
+        <p class="how-title">Quick Visual Overview</p>
+        <div class="how-grid">
+          <div class="how-step"><b>1) Mission Stress</b><p>Burn20 + fail-rate + relative mortality + trend are combined into stress.</p></div>
+          <div class="how-step"><b>2) Load Balance</b><p>Stress is mixed with absolute death load, so busy fronts matter too.</p></div>
+          <div class="how-step"><b>3) Final MedCrit</b><p>Nonlinear scaling gives score 0..1 and class (resort → slaughter).</p></div>
+        </div>
+        <div class="how-formula">stress = 1 - exp(-(k_burn·burn20 + k_fail·fail + k_rel·rel + k_trend·trend)/scale) ·· medcrit = raw^gamma</div>
+        <a class="how-link" href="medcrit-formulas.html">Open full formulas and variable definitions</a>
       </div>
     </section>
 
@@ -717,6 +781,59 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
 """
     (PUBLIC_DIR / "index.html").write_text(index_html, encoding="utf-8")
     (PUBLIC_DIR / "generated_at_utc.txt").write_text(now_utc + "\n", encoding="utf-8")
+
+    formulas_html = r"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MedCrit Full Formula</title>
+  <script>
+    window.MathJax = { tex: { inlineMath: [['$', '$'], ['\(', '\)']] } };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <style>
+    body { margin:0; background:#0b121b; color:#e5f1ff; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+    .card { border:1px solid rgba(120,170,210,.25); background:rgba(12,22,32,.84); border-radius:14px; padding:1rem; margin-bottom:1rem; }
+    h1,h2 { margin: .2rem 0 .7rem; }
+    a { color:#8fd1ff; text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    code { color:#bde4ff; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <p><a href="index.html">← Back to dashboard</a></p>
+    <h1>MedCrit Full Mathematical Definition</h1>
+
+    <div class="card">
+      <h2>Core Nonlinear Model</h2>
+      <p>$$S = 1 - e^{-rac{k_{burn}B + k_{fail}F + k_{rel}R + k_{trend}T}{\sigma}}$$</p>
+      <p>$$P = \lambda V + (1-\lambda)S$$</p>
+      <p>$$M = \left( G_p\,G_m\,P 
+ight)^{\gamma}$$</p>
+      <p>Where $M\in[0,1]$ is final <b>MedCrit</b>.</p>
+    </div>
+
+    <div class="card">
+      <h2>Variables</h2>
+      <p><code>B</code> = burn20 proxy (lives burn pressure), <code>F</code> = mission fail proxy, <code>R</code> = relative mortality, <code>T</code> = worsening trend.</p>
+      <p><code>V</code> = absolute death load component.</p>
+      <p><code>G_p</code>, <code>G_m</code> = gates for player count and mission count (suppress false leaders on empty planets).</p>
+      <p><code>k_*</code>, <code>σ</code>, <code>λ</code>, <code>γ</code> are calibrated coefficients.</p>
+    </div>
+
+    <div class="card">
+      <h2>Interpretation Scale</h2>
+      <p><code>resort</code> (5) → <code>control</code> (4) → <code>problematic</code> (3) → <code>tough</code> (2) → <code>slaughter</code> (1).</p>
+      <p>Higher MedCrit means stronger need for medical support intervention.</p>
+    </div>
+  </div>
+</body>
+</html>
+"""
+    (PUBLIC_DIR / "medcrit-formulas.html").write_text(formulas_html, encoding="utf-8")
 
 
 def _publish_archive_to_public(tz: ZoneInfo) -> None:
@@ -734,7 +851,7 @@ def _publish_archive_to_public(tz: ZoneInfo) -> None:
             src_anim = day_dir / f"animation_{w}.html"
             if src_anim.exists():
                 shutil.copy2(src_anim, dst / f"animation_{w}.html")
-                links.append(f'<li><a href="animation_{w}.html">Worker {w//60} min</a></li>')
+                links.append(f'<li><a href="animation_{w}.html">Window {w//60} min</a></li>')
         idx = f"""<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Archive {day_dir.name}</title></head>
 <body style="font-family: sans-serif; max-width:800px; margin:2rem auto;">
 <h1>Archive {day_dir.name}</h1>
