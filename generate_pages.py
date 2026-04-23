@@ -286,20 +286,21 @@ def _render_animation(
     if not run_rows:
         return
 
+    assets_rel = os.path.relpath(PUBLIC_DIR / "assets", output_path.parent).replace("\\", "/")
     first_payload = _build_frame_payload(run_rows[0]["items"], TOP_N)
     fig = make_subplots(
         rows=2,
         cols=3,
         subplot_titles=(
-            "Топ по MedCrit score (0..1)",
-            "Компоненты MedCrit по топ-планетам",
-            "Топ по тренду ухудшения",
-            "Баланс абсолютной/относительной смертности",
-            "Burn20 vs fail-rate",
-            "Классификация планет (resort→slaughter)",
+            "Top MedCrit score (0..1)",
+            "MedCrit components (top planets)",
+            "Top deterioration trend",
+            "Absolute vs relative mortality balance",
+            "Burn20 vs mission fail rate",
+            "Planet classes (resort→slaughter)",
         ),
-        vertical_spacing=0.15,
-        horizontal_spacing=0.08,
+        vertical_spacing=0.14,
+        horizontal_spacing=0.07,
     )
 
     fig.add_trace(go.Bar(x=first_payload["medcrit_x"], y=first_payload["medcrit_y"], orientation="h", marker=dict(color=first_payload["medcrit_colors"])), row=1, col=1)
@@ -360,25 +361,33 @@ def _render_animation(
     fig.update_layout(
         template="plotly_dark",
         showlegend=False,
-        height=1250,
-        width=2100,
+        autosize=True,
+        height=860,
         paper_bgcolor="rgb(14, 16, 18)",
         plot_bgcolor="rgb(21, 24, 27)",
-        margin=dict(l=90, r=150, t=130, b=100),
+        margin=dict(l=84, r=120, t=120, b=128),
         title=(
-            f"MedicDivers Animated Dashboard {title_suffix}"
+            f"MedCrit Animated Dashboard {title_suffix}"
             f"<br><sup>Window: {window_seconds // 60} min | Frames: {len(run_rows)} | Last frame UTC: {str(run_rows[-1].get("timestamp", "n/a"))}</sup>"
         ),
+        title_font=dict(family="Orbitron, Rajdhani, sans-serif", size=28, color="#f4f8ff"),
+        font=dict(family="Rajdhani, Segoe UI, sans-serif", size=14, color="#e9f3ff"),
+        hoverlabel=dict(bgcolor="rgba(7,10,15,0.95)", bordercolor="#6ed4ff", font=dict(color="#f4f7ff", size=13)),
         updatemenus=[
             {
                 "type": "buttons",
                 "direction": "left",
                 "x": 0.0,
-                "y": 1.18,
+                "y": 1.16,
                 "showactive": True,
+                "pad": {"t": 4, "r": 8},
+                "font": {"family": "Rajdhani, sans-serif", "size": 16, "color": "#f7fbff"},
+                "bgcolor": "rgba(19,37,54,0.9)",
+                "bordercolor": "rgba(110, 212, 255, 0.65)",
+                "borderwidth": 2,
                 "buttons": [
-                    {"label": "Play", "method": "animate", "args": [None, {"frame": {"duration": 700, "redraw": True}, "fromcurrent": True}]},
-                    {"label": "Pause", "method": "animate", "args": [[None], {"frame": {"duration": 0, "redraw": False}, "mode": "immediate"}]},
+                    {"label": "Play ▶", "method": "animate", "args": [None, {"frame": {"duration": 700, "redraw": True}, "fromcurrent": True}]},
+                    {"label": "Pause ⏸", "method": "animate", "args": [[None], {"frame": {"duration": 0, "redraw": False}, "mode": "immediate"}]},
                 ],
             }
         ],
@@ -387,6 +396,23 @@ def _render_animation(
                 "active": 0,
                 "x": 0.08,
                 "len": 0.9,
+                "y": -0.02,
+                "pad": {"t": 58, "b": 0},
+                "bgcolor": "rgba(16,31,46,0.82)",
+                "activebgcolor": "#ff9f43",
+                "bordercolor": "rgba(110, 212, 255, 0.7)",
+                "borderwidth": 2,
+                "ticklen": 8,
+                "tickwidth": 2,
+                "tickcolor": "#cfe9ff",
+                "font": {"family": "Rajdhani, sans-serif", "size": 13, "color": "#dbe9fa"},
+                "currentvalue": {
+                    "visible": True,
+                    "prefix": "Shown time (UTC): ",
+                    "xanchor": "left",
+                    "offset": 14,
+                    "font": {"family": "Orbitron, Rajdhani, sans-serif", "size": 29, "color": "#fff2bf"},
+                },
                 "steps": [
                     {
                         "label": _format_slider_time(str(fr["timestamp"])),
@@ -398,12 +424,12 @@ def _render_animation(
             }
         ],
     )
-    fig.update_xaxes(range=[0, 1], title_text="medcrit score", row=1, col=1)
+    fig.update_xaxes(range=[0, 1], title_text="MedCrit score", row=1, col=1)
     fig.update_xaxes(range=[0, 1], title_text="trend", row=1, col=3)
     fig.update_xaxes(title_text="deaths/min", row=2, col=1)
     fig.update_yaxes(title_text="deaths/100 players/min", row=2, col=1)
     fig.update_xaxes(range=[0, 1], title_text="burn20", row=2, col=2)
-    fig.update_yaxes(range=[0, 1], title_text="fail-rate", row=2, col=2)
+    fig.update_yaxes(range=[0, 1], title_text="mission fail rate", row=2, col=2)
     fig.update_yaxes(title_text="planets", row=2, col=3)
     fig.update_yaxes(autorange="reversed", row=1, col=1)
     fig.update_yaxes(autorange="reversed", row=1, col=3)
@@ -430,7 +456,172 @@ def _render_animation(
     fig.frames = frames
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.write_html(str(output_path), include_plotlyjs="cdn", full_html=True)
+    plot_id = f"medcrit-plot-{window_seconds}"
+    plot_fragment = fig.to_html(
+        include_plotlyjs="cdn",
+        full_html=False,
+        div_id=plot_id,
+        default_width="100%",
+        default_height="100%",
+        config={"responsive": True, "scrollZoom": False, "displaylogo": False},
+        post_script=f"""
+(function() {{
+  const plot = document.getElementById('{plot_id}');
+  function fit() {{
+    if (!plot || typeof Plotly === 'undefined') return;
+    const target = Math.max(560, window.innerHeight - 260);
+    Plotly.relayout(plot, {{height: target}});
+  }}
+  fit();
+  window.addEventListener('resize', fit);
+}})();
+""",
+    )
+    page = f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MedCrit Animated Dashboard</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700&family=Rajdhani:wght@500;700&display=swap');
+    :root {{
+      --bg-1: #081118;
+      --bg-2: #10222f;
+      --panel: rgba(11, 20, 30, 0.9);
+      --line: rgba(133, 185, 224, 0.24);
+      --txt: #e8f3ff;
+      --muted: #93a8bd;
+    }}
+    * {{ box-sizing: border-box; }}
+    html, body {{ height: 100%; }}
+    body {{
+      margin: 0;
+      overflow: hidden;
+      font-family: 'Rajdhani', sans-serif;
+      color: var(--txt);
+      background:
+        radial-gradient(1200px 600px at 10% -5%, rgba(30, 110, 150, 0.35), transparent 60%),
+        radial-gradient(900px 500px at 90% 0%, rgba(22, 58, 94, 0.35), transparent 60%),
+        linear-gradient(180deg, var(--bg-2), var(--bg-1));
+    }}
+    .shell {{
+      max-width: 1460px;
+      margin: 0 auto;
+      height: 100%;
+      padding: 0.9rem 1rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }}
+    .hero {{
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: linear-gradient(145deg, rgba(10, 22, 33, 0.92), rgba(8, 15, 24, 0.96));
+      padding: 0.72rem 0.9rem 0.84rem;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.32);
+      flex: 0 0 auto;
+    }}
+    .brand-row {{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 0.65rem;
+    }}
+    .brand {{
+      border: 1px solid rgba(135, 180, 220, 0.2);
+      border-radius: 12px;
+      min-height: 74px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(6, 15, 24, 0.72);
+      padding: 0.4rem;
+    }}
+    .brand img {{ max-width: 100%; max-height: 68px; object-fit: contain; }}
+    .title {{
+      margin: 0.15rem 0 0.22rem;
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 0.055em;
+      font-size: clamp(1.05rem, 1.45vw, 1.55rem);
+      text-transform: uppercase;
+    }}
+    .meta {{ color: var(--muted); font-size: 0.97rem; }}
+    .chart-card {{
+      flex: 1 1 auto;
+      min-height: 0;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--panel);
+      box-shadow: 0 14px 36px rgba(0,0,0,0.3);
+      padding: 0.35rem;
+      overflow: hidden;
+    }}
+    .chart-wrap {{ width: 100%; height: 100%; overflow: hidden; }}
+    .chart-wrap > div,
+    .js-plotly-plot,
+    .plotly,
+    .plot-container,
+    .svg-container {{
+      width: 100% !important;
+      max-width: 100% !important;
+      height: 100% !important;
+    }}
+    .plotly .modebar {{
+      background: rgba(12, 22, 34, 0.82) !important;
+      border: 1px solid rgba(110, 212, 255, 0.45) !important;
+      border-radius: 10px !important;
+      padding: 2px !important;
+    }}
+    .plotly .modebar-btn path {{ fill: #d9ecff !important; }}
+    .footer {{
+      flex: 0 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.95rem;
+      padding: 0 0.2rem;
+    }}
+    .footer a {{
+      color: #cfe9ff;
+      text-decoration: none;
+      border: 1px solid rgba(110, 212, 255, 0.4);
+      border-radius: 999px;
+      padding: 0.24rem 0.62rem;
+      background: rgba(29, 68, 101, 0.36);
+    }}
+    .footer a:hover {{ border-color: rgba(110, 212, 255, 0.72); }}
+    @media (max-width: 900px) {{
+      .brand-row {{ grid-template-columns: 1fr; }}
+      .title {{ font-size: 1rem; }}
+      .meta {{ font-size: 0.86rem; }}
+      .footer {{ font-size: 0.82rem; gap: 0.4rem; }}
+    }}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <div class="brand-row">
+        <div class="brand"><img src="{assets_rel}/logo_medicdivers.png" alt="MedicDivers Utilities" /></div>
+        <div class="brand"><img src="{assets_rel}/logo_medcrit.png" alt="MedCrit by Permacura" /></div>
+      </div>
+      <h1 class="title">MedCrit Animated Dashboard</h1>
+      <div class="meta">Window: {window_seconds // 60} min | Frames: {len(run_rows)} | Last frame UTC: {str(run_rows[-1].get("timestamp", "n/a"))}</div>
+    </section>
+    <section class="chart-card">
+      <div class="chart-wrap">{plot_fragment}</div>
+    </section>
+    <div class="footer">
+      <span>Timeline slider controls the currently shown frame (UTC).</span>
+      <a href="index.html">Back</a>
+    </div>
+  </div>
+</body>
+</html>
+"""
+    output_path.write_text(page, encoding="utf-8")
 
 
 def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, Any]]], now_utc: str, day_local: str) -> None:
@@ -465,7 +656,7 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
                 f'<a class="worker-card" href="{file_name}">'
                 f'<span class="window-badge {badge_cls}">{badge}</span>'
                 f'<span class="worker-title">Window {w // 60} min</span>'
-                f'<span class="worker-meta">Данные скоро появятся</span>'
+                f'<span class="worker-meta">Data will appear soon</span>'
                 f'</a>'
             )
         else:
@@ -473,7 +664,7 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
                 f'<div class="worker-card muted">'
                 f'<span class="window-badge {badge_cls}">{badge}</span>'
                 f'<span class="worker-title">Window {w // 60} min</span>'
-                f'<span class="worker-meta">Пока нет данных</span>'
+                f'<span class="worker-meta">No data yet</span>'
                 f'</div>'
             )
 
@@ -505,11 +696,11 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
             archive_badges.append(f'<a class="day-badge" href="archive/{day_dir.name}/index.html">{day_dir.name}</a>')
 
     index_html = f"""<!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>MedicDivers Pages Dashboard</title>
+  <title>MedCrit Pages Dashboard</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700&family=Rajdhani:wght@500;700&display=swap');
     :root {{
@@ -770,7 +961,7 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
     <section class="section">
       <h2>Archive Days</h2>
       <div class="days">
-        {''.join(archive_badges) if archive_badges else '<span class="empty">Пока пусто</span>'}
+        {''.join(archive_badges) if archive_badges else '<span class="empty">No archive days yet</span>'}
       </div>
     </section>
   </div>
@@ -792,18 +983,175 @@ def _publish_archive_to_public(tz: ZoneInfo) -> None:
     for day_dir in day_dirs:
         dst = archive_pub / day_dir.name
         dst.mkdir(parents=True, exist_ok=True)
-        links = []
+        worker_cards = []
         for w in WINDOWS:
-            src_anim = day_dir / f"animation_{w}.html"
-            if src_anim.exists():
-                shutil.copy2(src_anim, dst / f"animation_{w}.html")
-                links.append(f'<li><a href="animation_{w}.html">Window {w//60} min</a></li>')
-        idx = f"""<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Archive {day_dir.name}</title></head>
-<body style="font-family: sans-serif; max-width:800px; margin:2rem auto;">
-<h1>Archive {day_dir.name}</h1>
-<ul>{''.join(links) if links else '<li>Нет файлов</li>'}</ul>
-<p><a href="../..">Back</a></p>
-</body></html>"""
+            rows = _read_jsonl(day_dir / f"runs_{w}.jsonl")
+            badge = f"{w // 60} MIN"
+            badge_cls = f"w{w // 60}"
+            if rows:
+                _render_animation(
+                    rows,
+                    window_seconds=w,
+                    output_path=dst / f"animation_{w}.html",
+                    title_suffix=f"(archive {day_dir.name})",
+                )
+                last_ts = str(rows[-1].get("timestamp", "n/a"))
+                worker_cards.append(
+                    f'<a class="worker-card" href="animation_{w}.html">'
+                    f'<span class="window-badge {badge_cls}">{badge}</span>'
+                    f'<span class="worker-title">Window {w // 60} min</span>'
+                    f'<span class="worker-meta">Last frame UTC: {last_ts}</span>'
+                    f'</a>'
+                )
+            else:
+                worker_cards.append(
+                    f'<div class="worker-card muted">'
+                    f'<span class="window-badge {badge_cls}">{badge}</span>'
+                    f'<span class="worker-title">Window {w // 60} min</span>'
+                    f'<span class="worker-meta">No data for this day</span>'
+                    f'</div>'
+                )
+
+        idx = f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Archive {day_dir.name}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700&family=Rajdhani:wght@500;700&display=swap');
+    :root {{
+      --bg-1: #081118;
+      --bg-2: #10222f;
+      --panel: rgba(11, 20, 30, 0.82);
+      --line: rgba(133, 185, 224, 0.24);
+      --txt: #e8f3ff;
+      --muted: #93a8bd;
+    }}
+    * {{ box-sizing: border-box; }}
+    body {{
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Rajdhani', sans-serif;
+      color: var(--txt);
+      background:
+        radial-gradient(1200px 600px at 10% -5%, rgba(30, 110, 150, 0.35), transparent 60%),
+        radial-gradient(900px 500px at 90% 0%, rgba(22, 58, 94, 0.35), transparent 60%),
+        linear-gradient(180deg, var(--bg-2), var(--bg-1));
+      padding: 2rem 1rem 3rem;
+    }}
+    .shell {{ max-width: 1160px; margin: 0 auto; }}
+    .hero {{
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: linear-gradient(145deg, rgba(10, 22, 33, 0.9), rgba(8, 15, 24, 0.95));
+      padding: 1.2rem 1.2rem 1.3rem;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+    }}
+    .brand-row {{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      align-items: center;
+      margin-bottom: 1rem;
+    }}
+    .brand {{
+      border: 1px solid rgba(135, 180, 220, 0.2);
+      border-radius: 14px;
+      min-height: 92px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(6, 15, 24, 0.72);
+      padding: 0.6rem;
+    }}
+    .brand img {{ max-width: 100%; max-height: 86px; object-fit: contain; }}
+    .title {{
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 0.06em;
+      font-size: clamp(1.25rem, 2.1vw, 1.85rem);
+      margin: 0.2rem 0 0.35rem;
+      text-transform: uppercase;
+    }}
+    .meta {{ color: var(--muted); font-size: 1.03rem; }}
+    .section {{ margin-top: 1.2rem; }}
+    .section h2 {{
+      margin: 0 0 0.65rem;
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 0.04em;
+      font-size: 1.08rem;
+      text-transform: uppercase;
+    }}
+    .workers {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.9rem; }}
+    .worker-card {{
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      text-decoration: none;
+      color: var(--txt);
+      border: 1px solid rgba(135, 180, 220, 0.24);
+      border-radius: 14px;
+      padding: 0.85rem;
+      background: var(--panel);
+      transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+    }}
+    .worker-card:hover {{ transform: translateY(-3px); border-color: rgba(110, 212, 255, 0.65); box-shadow: 0 8px 20px rgba(0,0,0,.25); }}
+    .worker-card.muted {{ opacity: 0.65; }}
+    .worker-title {{ font-size: 1.2rem; font-weight: 700; }}
+    .worker-meta {{ color: var(--muted); font-size: 0.98rem; }}
+    .window-badge {{
+      align-self: flex-start;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.07em;
+      border-radius: 999px;
+      padding: 0.28rem 0.58rem;
+      border: 1px solid transparent;
+      text-transform: uppercase;
+    }}
+    .window-badge.w5 {{ background: rgba(29,187,111,.18); color: #6af0a8; border-color: rgba(29,187,111,.52); }}
+    .window-badge.w15 {{ background: rgba(242,201,76,.16); color: #ffe295; border-color: rgba(242,201,76,.5); }}
+    .window-badge.w30 {{ background: rgba(255,77,79,.16); color: #ff9fa1; border-color: rgba(255,77,79,.5); }}
+    .back-link {{
+      display: inline-flex;
+      margin-top: 0.25rem;
+      text-decoration: none;
+      color: #cfe9ff;
+      background: rgba(29, 68, 101, 0.36);
+      border: 1px solid rgba(110, 212, 255, 0.4);
+      border-radius: 999px;
+      padding: 0.33rem 0.8rem;
+      font-weight: 700;
+    }}
+    .back-link:hover {{ border-color: rgba(110, 212, 255, 0.72); }}
+    @media (max-width: 900px) {{
+      .brand-row {{ grid-template-columns: 1fr; }}
+      .workers {{ grid-template-columns: 1fr; }}
+    }}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <div class="brand-row">
+        <div class="brand"><img src="../../assets/logo_medicdivers.png" alt="MedicDivers Utilities" /></div>
+        <div class="brand"><img src="../../assets/logo_medcrit.png" alt="MedCrit by Permacura" /></div>
+      </div>
+      <h1 class="title">Archive Day {day_dir.name}</h1>
+      <p class="meta">Open a window card to view the animated dashboard for this archived UTC day.</p>
+    </section>
+    <section class="section">
+      <h2>Detailed MedCrit Statistics</h2>
+      <div class="workers">
+        {''.join(worker_cards)}
+      </div>
+    </section>
+    <section class="section">
+      <a class="back-link" href="../../index.html">Back to main page</a>
+    </section>
+  </div>
+</body>
+</html>"""
         (dst / "index.html").write_text(idx, encoding="utf-8")
 
 
