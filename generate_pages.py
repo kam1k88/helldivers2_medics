@@ -759,10 +759,10 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
       <h2>How To Use MedCrit</h2>
       <div class="how-card">
         <p class="how-title">What It Means</p>
-        <p>MedCrit — это коэффициент необходимости поддержки Helldivers на планете. Он принимает значения от <b>0</b> до <b>1</b>.</p>
-        <p>Скор считается из нескольких компонентов: абсолютная и относительная смертность, тренд ухудшения, а также интенсивность сжигания подкреплений. Каждый результат относится к классу: <b>resort (5)</b>, <b>control (4)</b>, <b>problematic (3)</b>, <b>tough (2)</b>, <b>slaughter (1)</b>.</p>
-        <p>Примеры: на <b>Oshaune</b> MedCrit достигал <b>0.864</b> (<b>slaughter</b>) при окне полной кампании с октября по ноябрь 2025 года. На <b>Cyberstan</b> MedCrit составлял <b>0.788</b> (<b>tough</b>) при окне всей кампании с <b>10 по 20 февраля 2026 года</b>.</p>
-        <p>Medicdivers могут использовать эту статистику, чтобы минимизировать потери и помогать Helldivers там, где поддержка нужна больше всего.</p>
+        <p>MedCrit is a metric that measures the level of support required for Helldivers on a planet. It ranges from <b>0</b> to <b>1</b>.</p>
+        <p>The score is calculated based on several factors: absolute and relative mortality rates, the rate of deterioration, and the intensity of reinforcement consumption. Each result falls into one of the following categories: <b style="color:#2A9D8F;">resort</b>, <b style="color:#8AB17D;">control</b>, <b style="color:#E9C46A;">problematic</b>, <b style="color:#F4A261;">tough</b>, <b style="color:#E63946;">slaughter</b>.</p>
+        <p>Examples: On Oshaune, MedCrit reached <b style="color:#E63946;">0.864</b> during the entire campaign window from October to November 2025. On Cyberstan, MedCrit was <b style="color:#F4A261;">0.788</b> during the entire campaign window from <b>10 to 20 February 2026</b>.</p>
+        <p><b>Medicdivers can use these statistics to minimize casualties and assist Helldivers where support is needed most.</b></p>
       </div>
     </section>
 
