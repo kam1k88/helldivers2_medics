@@ -118,6 +118,163 @@ def _copy_brand_assets_to_public() -> None:
             shutil.copy2(src, dst_dir / dst_name)
 
 
+def _themed_shell_css() -> str:
+    return """
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700&family=Rajdhani:wght@500;700&display=swap');
+    :root {
+      --bg-1: #081118;
+      --bg-2: #10222f;
+      --panel: rgba(11, 20, 30, 0.82);
+      --line: rgba(133, 185, 224, 0.24);
+      --txt: #e8f3ff;
+      --muted: #93a8bd;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Rajdhani', sans-serif;
+      color: var(--txt);
+      background:
+        radial-gradient(1200px 600px at 10% -5%, rgba(30, 110, 150, 0.35), transparent 60%),
+        radial-gradient(900px 500px at 90% 0%, rgba(22, 58, 94, 0.35), transparent 60%),
+        linear-gradient(180deg, var(--bg-2), var(--bg-1));
+      padding: 2rem 1rem 3rem;
+    }
+    .shell { max-width: 1280px; margin: 0 auto; }
+    .hero {
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: linear-gradient(145deg, rgba(10, 22, 33, 0.9), rgba(8, 15, 24, 0.95));
+      padding: 1.2rem 1.2rem 1.4rem;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+    }
+    .brand-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .brand {
+      border: 1px solid rgba(135, 180, 220, 0.2);
+      border-radius: 14px;
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(6, 15, 24, 0.72);
+      padding: 0.6rem;
+    }
+    .brand img { max-width: 100%; max-height: 116px; object-fit: contain; }
+    .title {
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 0.06em;
+      font-size: clamp(1.2rem, 2.2vw, 1.8rem);
+      margin: 0.2rem 0 0.35rem;
+      text-transform: uppercase;
+    }
+    .meta { color: var(--muted); font-size: 1rem; }
+    .back-link {
+      display: inline-flex;
+      margin-top: 0.6rem;
+      text-decoration: none;
+      color: #e5f5ff;
+      border: 1px solid rgba(110, 212, 255, 0.6);
+      border-radius: 999px;
+      padding: 0.3rem 0.72rem;
+      background: rgba(30, 108, 160, 0.28);
+      font-weight: 700;
+    }
+    .back-link:hover { background: rgba(45, 138, 198, 0.42); }
+    .section { margin-top: 1.1rem; }
+    .section h2 {
+      margin: 0 0 0.6rem;
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 0.04em;
+      font-size: 1.05rem;
+      text-transform: uppercase;
+    }
+    .box {
+      border: 1px solid rgba(135, 180, 220, 0.24);
+      border-radius: 14px;
+      background: var(--panel);
+      padding: 0.85rem;
+    }
+    .workers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.9rem; }
+    .worker-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      text-decoration: none;
+      color: var(--txt);
+      border: 1px solid rgba(135, 180, 220, 0.24);
+      border-radius: 14px;
+      padding: 0.85rem;
+      background: var(--panel);
+      transition: transform .2s ease, border-color .2s ease;
+    }
+    .worker-card:hover { transform: translateY(-2px); border-color: rgba(110, 212, 255, 0.65); }
+    .worker-title { font-size: 1.15rem; font-weight: 700; }
+    .window-badge {
+      align-self: flex-start;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.07em;
+      border-radius: 999px;
+      padding: 0.28rem 0.58rem;
+      border: 1px solid transparent;
+      text-transform: uppercase;
+    }
+    .window-badge.w5 { background: rgba(29,187,111,.18); color: #6af0a8; border-color: rgba(29,187,111,.52); }
+    .window-badge.w15 { background: rgba(242,201,76,.16); color: #ffe295; border-color: rgba(242,201,76,.5); }
+    .window-badge.w30 { background: rgba(255,77,79,.16); color: #ff9fa1; border-color: rgba(255,77,79,.5); }
+    .plot-box { overflow-x: auto; }
+    .plot-box .plotly-graph-div { min-width: 1000px; }
+    .empty { color: var(--muted); }
+    @media (max-width: 900px) {
+      .brand-row { grid-template-columns: 1fr; }
+      .workers { grid-template-columns: 1fr; }
+      .plot-box .plotly-graph-div { min-width: 760px; }
+    }
+    """
+
+
+def _render_themed_shell_page(
+    page_title: str,
+    subtitle: str,
+    body_html: str,
+    asset_prefix: str,
+    back_href: str | None = None,
+    back_label: str = "Back",
+) -> str:
+    back_html = f'<a class="back-link" href="{back_href}">{back_label}</a>' if back_href else ""
+    return f"""<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{page_title}</title>
+  <style>{_themed_shell_css()}</style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <div class="brand-row">
+        <div class="brand"><img src="{asset_prefix}/logo_medicdivers.png" alt="MedicDivers Utilities" /></div>
+        <div class="brand"><img src="{asset_prefix}/logo_medcrit.png" alt="MedCrit by Permacura" /></div>
+      </div>
+      <h1 class="title">{page_title}</h1>
+      <p class="meta">{subtitle}</p>
+      {back_html}
+    </section>
+    {body_html}
+  </div>
+</body>
+</html>
+"""
+
+
 def _snapshot_to_payload(snapshots: Dict[int, core.PlanetSnapshot]) -> List[Dict[str, Any]]:
     return [asdict(s) for s in snapshots.values()]
 
@@ -430,7 +587,24 @@ def _render_animation(
     fig.frames = frames
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.write_html(str(output_path), include_plotlyjs="cdn", full_html=True)
+    plot_fragment = fig.to_html(
+        include_plotlyjs="cdn",
+        full_html=False,
+        config={"responsive": True, "displaylogo": False},
+    )
+    is_archive = "archive" in output_path.parts
+    asset_prefix = "../../assets" if is_archive else "assets"
+    back_label = f"Back to archive {output_path.parent.name}" if is_archive else "Back to main"
+    body_html = f'<section class="section"><div class="box plot-box">{plot_fragment}</div></section>'
+    page_html = _render_themed_shell_page(
+        page_title=f"MedCrit Animated Dashboard · Window {window_seconds // 60} min",
+        subtitle=f"{title_suffix} | Frames: {len(run_rows)} | Last frame UTC: {str(run_rows[-1].get('timestamp', 'n/a'))}",
+        body_html=body_html,
+        asset_prefix=asset_prefix,
+        back_href="index.html",
+        back_label=back_label,
+    )
+    output_path.write_text(page_html, encoding="utf-8")
 
 
 def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, Any]]], now_utc: str, day_local: str) -> None:
@@ -798,17 +972,38 @@ def _publish_archive_to_public(tz: ZoneInfo) -> None:
             if src_anim.exists():
                 shutil.copy2(src_anim, dst / f"animation_{w}.html")
                 links.append(f'<li><a href="animation_{w}.html">Window {w//60} min</a></li>')
-        idx = f"""<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Archive {day_dir.name}</title></head>
-<body style="font-family: sans-serif; max-width:800px; margin:2rem auto;">
-<h1>Archive {day_dir.name}</h1>
-<ul>{''.join(links) if links else '<li>Нет файлов</li>'}</ul>
-<p><a href="../..">Back</a></p>
-</body></html>"""
+        cards: List[str] = []
+        for w in WINDOWS:
+            if (dst / f"animation_{w}.html").exists():
+                badge_cls = f"w{w // 60}"
+                cards.append(
+                    f'<a class="worker-card" href="animation_{w}.html">'
+                    f'<span class="window-badge {badge_cls}">{w // 60} MIN</span>'
+                    f'<span class="worker-title">Window {w // 60} min</span>'
+                    f'</a>'
+                )
+
+        cards_html = "".join(cards) if cards else '<div class="box empty">No files</div>'
+        body_html = (
+            '<section class="section">'
+            f'<h2>Archive Day {day_dir.name}</h2>'
+            f'<div class="workers">{cards_html}</div>'
+            '</section>'
+        )
+        idx = _render_themed_shell_page(
+            page_title=f"MedCrit Archive · {day_dir.name}",
+            subtitle="UTC day snapshot",
+            body_html=body_html,
+            asset_prefix="../../assets",
+            back_href="../..",
+            back_label="Back to main",
+        )
         (dst / "index.html").write_text(idx, encoding="utf-8")
 
 
 def main() -> int:
     _ensure_dirs()
+    _copy_brand_assets_to_public()
     tz = ZoneInfo(TZ_NAME)
 
     now_utc_dt = datetime.now(timezone.utc)
