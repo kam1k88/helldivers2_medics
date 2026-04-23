@@ -31,6 +31,7 @@ PUBLIC_DIR = Path("public")
 SNAPSHOTS_FILE = DATA_DIR / "snapshots.jsonl"
 META_FILE = DATA_DIR / "meta.json"
 ARCHIVE_DIR = DATA_DIR / "archive"
+ASSETS_DIR = Path("assets")
 
 CLASS_COLOR = {
     "resort": "#2A9D8F",
@@ -102,6 +103,19 @@ def _write_jsonl(path: Path, rows: List[Dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     lines = [json.dumps(r, ensure_ascii=False) for r in rows]
     path.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
+
+
+def _copy_brand_assets_to_public() -> None:
+    branding = {
+        "209b2ba2-5e77-4795-8962-51ee9fbd818d-removebg-preview.png": "logo_medicdivers.png",
+        "b6899f8d-bd81-4588-8f5d-b73e634d70cc-removebg-preview.png": "logo_medcrit.png",
+    }
+    dst_dir = PUBLIC_DIR / "assets"
+    dst_dir.mkdir(parents=True, exist_ok=True)
+    for src_name, dst_name in branding.items():
+        src = ASSETS_DIR / src_name
+        if src.exists():
+            shutil.copy2(src, dst_dir / dst_name)
 
 
 def _snapshot_to_payload(snapshots: Dict[int, core.PlanetSnapshot]) -> List[Dict[str, Any]]:
@@ -420,6 +434,8 @@ def _render_animation(
 
 
 def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, Any]]], now_utc: str, day_local: str) -> None:
+    _copy_brand_assets_to_public()
+
     for w, rows in today_rows_by_window.items():
         if not rows:
             continue
@@ -429,23 +445,43 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
         latest_summary = core.generate_summary([core.PlanetPriority(**x) for x in latest_items], float(rows[-1]["elapsed_seconds"]))
         (PUBLIC_DIR / f"summary_{w}.txt").write_text(latest_summary, encoding="utf-8")
 
-    links = []
+    worker_cards = []
     for w in WINDOWS:
         file_name = f"animation_{w}_today.html"
         rows = today_rows_by_window.get(w, [])
+        badge = f"{w // 60} MIN"
+        badge_cls = f"w{w // 60}"
         if (PUBLIC_DIR / file_name).exists() and rows:
             last_ts = str(rows[-1].get("timestamp", "n/a"))
-            links.append(f'<li><a href="{file_name}">Worker {w//60} min (today)</a> — last frame UTC: {last_ts}</li>')
+            worker_cards.append(
+                f'<a class="worker-card" href="{file_name}">'
+                f'<span class="window-badge {badge_cls}">{badge}</span>'
+                f'<span class="worker-title">Worker {w // 60} min</span>'
+                f'<span class="worker-meta">Last frame UTC: {last_ts}</span>'
+                f'</a>'
+            )
         elif (PUBLIC_DIR / file_name).exists():
-            links.append(f'<li><a href="{file_name}">Worker {w//60} min (today)</a></li>')
+            worker_cards.append(
+                f'<a class="worker-card" href="{file_name}">'
+                f'<span class="window-badge {badge_cls}">{badge}</span>'
+                f'<span class="worker-title">Worker {w // 60} min</span>'
+                f'<span class="worker-meta">Данные скоро появятся</span>'
+                f'</a>'
+            )
         else:
-            links.append(f"<li>Worker {w//60} min (today): пока нет данных</li>")
+            worker_cards.append(
+                f'<div class="worker-card muted">'
+                f'<span class="window-badge {badge_cls}">{badge}</span>'
+                f'<span class="worker-title">Worker {w // 60} min</span>'
+                f'<span class="worker-meta">Пока нет данных</span>'
+                f'</div>'
+            )
 
-    archive_links = []
+    archive_badges = []
     archive_pub = PUBLIC_DIR / "archive"
     if archive_pub.exists():
         for day_dir in sorted([p for p in archive_pub.iterdir() if p.is_dir()], reverse=True):
-            archive_links.append(f'<li><a href="archive/{day_dir.name}/index.html">{day_dir.name}</a></li>')
+            archive_badges.append(f'<a class="day-badge" href="archive/{day_dir.name}/index.html">{day_dir.name}</a>')
 
     index_html = f"""<!doctype html>
 <html lang="ru">
@@ -454,26 +490,147 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>MedicDivers Pages Dashboard</title>
   <style>
-    body {{ font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; background:#0e1116; color:#f0f3f6; }}
-    a {{ color:#6cb6ff; text-decoration:none; }}
-    a:hover {{ text-decoration:underline; }}
-    .box {{ border:1px solid #2f3b4a; padding:1rem; border-radius:10px; margin-top:1rem; background:#141a23; }}
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700&family=Rajdhani:wght@500;700&display=swap');
+    :root {{
+      --bg-1: #081118;
+      --bg-2: #10222f;
+      --panel: rgba(11, 20, 30, 0.82);
+      --line: rgba(133, 185, 224, 0.24);
+      --txt: #e8f3ff;
+      --muted: #93a8bd;
+      --accent: #6ed4ff;
+      --green: #1dbb6f;
+      --gold: #f2c94c;
+      --orange: #ff9f43;
+      --red: #ff4d4f;
+    }}
+    * {{ box-sizing: border-box; }}
+    body {{
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Rajdhani', sans-serif;
+      color: var(--txt);
+      background:
+        radial-gradient(1200px 600px at 10% -5%, rgba(30, 110, 150, 0.35), transparent 60%),
+        radial-gradient(900px 500px at 90% 0%, rgba(22, 58, 94, 0.35), transparent 60%),
+        linear-gradient(180deg, var(--bg-2), var(--bg-1));
+      padding: 2rem 1rem 3rem;
+    }}
+    .shell {{ max-width: 1160px; margin: 0 auto; }}
+    .hero {{
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: linear-gradient(145deg, rgba(10, 22, 33, 0.9), rgba(8, 15, 24, 0.95));
+      padding: 1.2rem 1.2rem 1.6rem;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+    }}
+    .brand-row {{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      align-items: center;
+      margin-bottom: 1rem;
+    }}
+    .brand {{
+      border: 1px solid rgba(135, 180, 220, 0.2);
+      border-radius: 14px;
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(6, 15, 24, 0.72);
+      padding: 0.6rem;
+    }}
+    .brand img {{ max-width: 100%; max-height: 116px; object-fit: contain; }}
+    .title {{
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 0.06em;
+      font-size: clamp(1.3rem, 2.2vw, 2rem);
+      margin: 0.2rem 0 0.35rem;
+      text-transform: uppercase;
+    }}
+    .meta {{ color: var(--muted); font-size: 1.05rem; }}
+    .section {{ margin-top: 1.2rem; }}
+    .section h2 {{
+      margin: 0 0 0.65rem;
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 0.04em;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+    }}
+    .workers {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.9rem; }}
+    .worker-card {{
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      text-decoration: none;
+      color: var(--txt);
+      border: 1px solid rgba(135, 180, 220, 0.24);
+      border-radius: 14px;
+      padding: 0.85rem;
+      background: var(--panel);
+      transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+    }}
+    .worker-card:hover {{ transform: translateY(-3px); border-color: rgba(110, 212, 255, 0.65); box-shadow: 0 8px 20px rgba(0,0,0,.25); }}
+    .worker-card.muted {{ opacity: 0.65; }}
+    .worker-title {{ font-size: 1.2rem; font-weight: 700; }}
+    .worker-meta {{ color: var(--muted); font-size: 0.98rem; }}
+    .window-badge {{
+      align-self: flex-start;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.07em;
+      border-radius: 999px;
+      padding: 0.28rem 0.58rem;
+      border: 1px solid transparent;
+      text-transform: uppercase;
+    }}
+    .window-badge.w5 {{ background: rgba(29,187,111,.18); color: #6af0a8; border-color: rgba(29,187,111,.52); }}
+    .window-badge.w15 {{ background: rgba(242,201,76,.16); color: #ffe295; border-color: rgba(242,201,76,.5); }}
+    .window-badge.w30 {{ background: rgba(255,77,79,.16); color: #ff9fa1; border-color: rgba(255,77,79,.5); }}
+    .days {{ display: flex; flex-wrap: wrap; gap: 0.55rem; }}
+    .day-badge {{
+      text-decoration: none;
+      color: #cfe9ff;
+      background: rgba(29, 68, 101, 0.36);
+      border: 1px solid rgba(110, 212, 255, 0.36);
+      border-radius: 999px;
+      padding: 0.36rem 0.72rem;
+      font-size: 0.95rem;
+      transition: background .2s ease, border-color .2s ease;
+    }}
+    .day-badge:hover {{ background: rgba(49, 112, 165, 0.45); border-color: rgba(110, 212, 255, 0.72); }}
+    .empty {{ color: var(--muted); }}
+    @media (max-width: 900px) {{
+      .brand-row {{ grid-template-columns: 1fr; }}
+      .workers {{ grid-template-columns: 1fr; }}
+    }}
   </style>
 </head>
 <body>
-  <h1>MedicDivers: Daily Animated Dashboards</h1>
-  <p>Timezone: {TZ_NAME} | Current local day: {day_local} | Updated (UTC): {now_utc}</p>
-  <div class="box">
-    <h2>Today</h2>
-    <ul>
-      {''.join(links)}
-    </ul>
-  </div>
-  <div class="box">
-    <h2>Archive</h2>
-    <ul>
-      {''.join(archive_links) if archive_links else '<li>Пока пусто</li>'}
-    </ul>
+  <div class="shell">
+    <section class="hero">
+      <div class="brand-row">
+        <div class="brand"><img src="assets/logo_medicdivers.png" alt="MedicDivers Utilities" /></div>
+        <div class="brand"><img src="assets/logo_medcrit.png" alt="MedCrit by Permacura" /></div>
+      </div>
+      <h1 class="title">MedicDivers Daily Animated Dashboards</h1>
+      <p class="meta">Timezone: {TZ_NAME} | Local day: {day_local} | Updated UTC: {now_utc}</p>
+    </section>
+
+    <section class="section">
+      <h2>Workers</h2>
+      <div class="workers">
+        {''.join(worker_cards)}
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Archive Days</h2>
+      <div class="days">
+        {''.join(archive_badges) if archive_badges else '<span class="empty">Пока пусто</span>'}
+      </div>
+    </section>
   </div>
 </body>
 </html>
