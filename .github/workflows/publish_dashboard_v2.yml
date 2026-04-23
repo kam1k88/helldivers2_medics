@@ -2,8 +2,6 @@ name: Publish Dashboard
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "1-59/5 * * * *"
 
 permissions:
   contents: write
@@ -12,7 +10,7 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -37,7 +35,7 @@ jobs:
 
       - name: Build dashboard
         env:
-          PAGES_TZ: "Europe/Moscow"
+          PAGES_TZ: "UTC"
           REQUEST_TIMEOUT: "90"
           REQUEST_RETRIES: "6"
         run: |
