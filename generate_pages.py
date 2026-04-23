@@ -756,16 +756,13 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
     </section>
 
     <section class="section">
-      <h2>How MedCrit is Calculated?</h2>
+      <h2>How To Use MedCrit</h2>
       <div class="how-card">
-        <p class="how-title">Quick Visual Overview</p>
-        <div class="how-grid">
-          <div class="how-step"><b>1) Mission Stress</b><p>Burn20 + fail-rate + relative mortality + trend are combined into stress.</p></div>
-          <div class="how-step"><b>2) Load Balance</b><p>Stress is mixed with absolute death load, so busy fronts matter too.</p></div>
-          <div class="how-step"><b>3) Final MedCrit</b><p>Nonlinear scaling gives score 0..1 and class (resort → slaughter).</p></div>
-        </div>
-        <div class="how-formula">stress = 1 - exp(-(k_burn·burn20 + k_fail·fail + k_rel·rel + k_trend·trend)/scale) ·· medcrit = raw^gamma</div>
-        <a class="how-link" href="medcrit-formulas.html">Open full formulas and variable definitions</a>
+        <p class="how-title">What It Means</p>
+        <p>MedCrit — это коэффициент необходимости поддержки Helldivers на планете. Он принимает значения от <b>0</b> до <b>1</b>.</p>
+        <p>Скор считается из нескольких компонентов: абсолютная и относительная смертность, тренд ухудшения, а также интенсивность сжигания подкреплений. Каждый результат относится к классу: <b>resort (5)</b>, <b>control (4)</b>, <b>problematic (3)</b>, <b>tough (2)</b>, <b>slaughter (1)</b>.</p>
+        <p>Примеры: на <b>Oshaune</b> MedCrit достигал <b>0.864</b> (<b>slaughter</b>) при окне полной кампании с октября по ноябрь 2025 года. На <b>Cyberstan</b> MedCrit составлял <b>0.788</b> (<b>tough</b>) при окне всей кампании с <b>10 по 20 февраля 2026 года</b>.</p>
+        <p>Medicdivers могут использовать эту статистику, чтобы минимизировать потери и помогать Helldivers там, где поддержка нужна больше всего.</p>
       </div>
     </section>
 
@@ -782,58 +779,6 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
     (PUBLIC_DIR / "index.html").write_text(index_html, encoding="utf-8")
     (PUBLIC_DIR / "generated_at_utc.txt").write_text(now_utc + "\n", encoding="utf-8")
 
-    formulas_html = r"""<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>MedCrit Full Formula</title>
-  <script>
-    window.MathJax = { tex: { inlineMath: [['$', '$'], ['\(', '\)']] } };
-  </script>
-  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-  <style>
-    body { margin:0; background:#0b121b; color:#e5f1ff; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 2rem 1rem 3rem; }
-    .card { border:1px solid rgba(120,170,210,.25); background:rgba(12,22,32,.84); border-radius:14px; padding:1rem; margin-bottom:1rem; }
-    h1,h2 { margin: .2rem 0 .7rem; }
-    a { color:#8fd1ff; text-decoration:none; }
-    a:hover { text-decoration:underline; }
-    code { color:#bde4ff; }
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <p><a href="index.html">← Back to dashboard</a></p>
-    <h1>MedCrit Full Mathematical Definition</h1>
-
-    <div class="card">
-      <h2>Core Nonlinear Model</h2>
-      <p>$$S = 1 - e^{-rac{k_{burn}B + k_{fail}F + k_{rel}R + k_{trend}T}{\sigma}}$$</p>
-      <p>$$P = \lambda V + (1-\lambda)S$$</p>
-      <p>$$M = \left( G_p\,G_m\,P 
-ight)^{\gamma}$$</p>
-      <p>Where $M\in[0,1]$ is final <b>MedCrit</b>.</p>
-    </div>
-
-    <div class="card">
-      <h2>Variables</h2>
-      <p><code>B</code> = burn20 proxy (lives burn pressure), <code>F</code> = mission fail proxy, <code>R</code> = relative mortality, <code>T</code> = worsening trend.</p>
-      <p><code>V</code> = absolute death load component.</p>
-      <p><code>G_p</code>, <code>G_m</code> = gates for player count and mission count (suppress false leaders on empty planets).</p>
-      <p><code>k_*</code>, <code>σ</code>, <code>λ</code>, <code>γ</code> are calibrated coefficients.</p>
-    </div>
-
-    <div class="card">
-      <h2>Interpretation Scale</h2>
-      <p><code>resort</code> (5) → <code>control</code> (4) → <code>problematic</code> (3) → <code>tough</code> (2) → <code>slaughter</code> (1).</p>
-      <p>Higher MedCrit means stronger need for medical support intervention.</p>
-    </div>
-  </div>
-</body>
-</html>
-"""
-    (PUBLIC_DIR / "medcrit-formulas.html").write_text(formulas_html, encoding="utf-8")
 
 
 def _publish_archive_to_public(tz: ZoneInfo) -> None:
