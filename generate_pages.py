@@ -21,7 +21,7 @@ import main as core
 
 WINDOWS = [300, 900, 1800]
 TOP_N = int(os.getenv("PAGES_TOP_N", "12"))
-TZ_NAME = os.getenv("PAGES_TZ", "Europe/Moscow")
+TZ_NAME = os.getenv("PAGES_TZ", "UTC")
 ARCHIVE_DAYS_TO_PUBLISH = int(os.getenv("PAGES_ARCHIVE_DAYS_TO_PUBLISH", "30"))
 UPDATE_GRACE_SECONDS = int(os.getenv("PAGES_UPDATE_GRACE_SECONDS", "180"))
 
@@ -477,6 +477,27 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
                 f'</div>'
             )
 
+    top_medcrit_cards = []
+    top_15_rows = today_rows_by_window.get(900, [])
+    if top_15_rows:
+        latest_15_items = top_15_rows[-1].get("items", [])
+        ranked_15 = sorted(latest_15_items, key=lambda x: float(x.get("medcrit_score", 0.0)), reverse=True)[:3]
+        for idx, item in enumerate(ranked_15):
+            score = float(item.get("medcrit_score", 0.0))
+            med_class = str(item.get("medcrit_label", "control"))
+            color = CLASS_COLOR.get(med_class, "#8FB0C4")
+            size_cls = "leader" if idx == 0 else "runner"
+            planet = f"{item.get('name', 'Unknown')} [{item.get('sector', '?')}]"
+            top_medcrit_cards.append(
+                f'<div class="top-card {size_cls}" style="--class-color:{color};">'
+                f'<div class="top-head">#{idx + 1} · {med_class.upper()}</div>'
+                f'<div class="top-score">{score:.3f}</div>'
+                f'<div class="top-planet">{planet}</div>'
+                f'</div>'
+            )
+    if not top_medcrit_cards:
+        top_medcrit_cards.append('<div class="top-card empty-card">No data yet for 15-minute window.</div>')
+
     archive_badges = []
     archive_pub = PUBLIC_DIR / "archive"
     if archive_pub.exists():
@@ -558,6 +579,56 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
       font-size: 1.1rem;
       text-transform: uppercase;
     }}
+    .top-grid {{
+      display: grid;
+      grid-template-columns: 1.35fr 1fr 1fr;
+      gap: 0.9rem;
+    }}
+    .top-card {{
+      border: 1px solid rgba(135, 180, 220, 0.24);
+      border-radius: 14px;
+      background: var(--panel);
+      padding: 0.9rem;
+      min-height: 128px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 0.25rem;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+    }}
+    .top-card.leader {{
+      min-height: 160px;
+      background: linear-gradient(145deg, rgba(19, 37, 54, 0.9), rgba(11, 20, 30, 0.9));
+      border-color: rgba(149, 214, 255, 0.55);
+    }}
+    .top-card.empty-card {{
+      grid-column: 1 / -1;
+      color: var(--muted);
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }}
+    .top-head {{
+      font-size: 0.84rem;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }}
+    .top-score {{
+      font-family: 'Orbitron', sans-serif;
+      color: var(--class-color);
+      font-weight: 700;
+      line-height: 1;
+      font-size: 2rem;
+      text-shadow: 0 0 16px color-mix(in srgb, var(--class-color) 35%, transparent);
+    }}
+    .top-card.leader .top-score {{ font-size: 3.25rem; }}
+    .top-planet {{
+      color: #d7e8f7;
+      font-size: 1.02rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }}
     .workers {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.9rem; }}
     .worker-card {{
       display: flex;
@@ -603,7 +674,9 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
     .empty {{ color: var(--muted); }}
     @media (max-width: 900px) {{
       .brand-row {{ grid-template-columns: 1fr; }}
+      .top-grid {{ grid-template-columns: 1fr; }}
       .workers {{ grid-template-columns: 1fr; }}
+      .top-card.leader .top-score {{ font-size: 2.45rem; }}
     }}
   </style>
 </head>
@@ -615,7 +688,14 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
         <div class="brand"><img src="assets/logo_medcrit.png" alt="MedCrit by Permacura" /></div>
       </div>
       <h1 class="title">MedicDivers Daily Animated Dashboards</h1>
-      <p class="meta">Timezone: {TZ_NAME} | Local day: {day_local} | Updated UTC: {now_utc}</p>
+      <p class="meta">Timezone: UTC (Greenwich) | Day (UTC): {day_local} | Updated UTC: {now_utc}</p>
+    </section>
+
+    <section class="section">
+      <h2>Top 3 MedCrit · 15 Minute Window</h2>
+      <div class="top-grid">
+        {''.join(top_medcrit_cards)}
+      </div>
     </section>
 
     <section class="section">
