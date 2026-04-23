@@ -761,6 +761,7 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
         <p class="how-title">What It Means</p>
         <p>MedCrit is a metric that measures the level of support required for Helldivers on a planet. It ranges from <b>0</b> to <b>1</b>.</p>
         <p>The score is calculated based on several factors: absolute and relative mortality rates, the rate of deterioration, and the intensity of reinforcement consumption. Each result falls into one of the following categories: <b style="color:#2A9D8F;">resort</b>, <b style="color:#8AB17D;">control</b>, <b style="color:#E9C46A;">problematic</b>, <b style="color:#F4A261;">tough</b>, <b style="color:#E63946;">slaughter</b>.</p>
+        <p>Since this metric uses cumulative data, it may vary depending on the time window selected. Time windows of 5 minutes, 15 minutes, and 30 minutes are available. Shorter time windows provide an immediate snapshot of survival rates in the Galactic War, while longer time windows allow for a more strategic assessment of the situation.</p>
         <p>Examples: On <b style="color:#E9C46A;">Oshaune</b>, MedCrit reached <b style="color:#E63946;">0.864</b> during the entire campaign window from October to November 2025. On <b style="color:#E9C46A;">Cyberstan</b>, MedCrit was <b style="color:#F4A261;">0.788</b> during the entire campaign window on February 2026.</p>
         <p><b>Medicdivers can use these statistics to minimize casualties and assist Helldivers where support is needed most.</b></p>
       </div>
