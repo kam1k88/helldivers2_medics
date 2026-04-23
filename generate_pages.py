@@ -229,13 +229,26 @@ def _themed_shell_css() -> str:
     .window-badge.w5 { background: rgba(29,187,111,.18); color: #6af0a8; border-color: rgba(29,187,111,.52); }
     .window-badge.w15 { background: rgba(242,201,76,.16); color: #ffe295; border-color: rgba(242,201,76,.5); }
     .window-badge.w30 { background: rgba(255,77,79,.16); color: #ff9fa1; border-color: rgba(255,77,79,.5); }
-    .plot-box { overflow-x: auto; }
-    .plot-box .plotly-graph-div { min-width: 1000px; }
+    .plot-box {
+      overflow: hidden;
+      padding: 0.2rem;
+    }
+    .plot-box .js-plotly-plot,
+    .plot-box .plot-container,
+    .plot-box .plotly-graph-div,
+    .plot-box .svg-container {
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+    .plot-box .modebar {
+      background: rgba(8, 18, 28, 0.72) !important;
+      border-radius: 8px;
+      border: 1px solid rgba(120, 170, 210, 0.28);
+    }
     .empty { color: var(--muted); }
     @media (max-width: 900px) {
       .brand-row { grid-template-columns: 1fr; }
       .workers { grid-template-columns: 1fr; }
-      .plot-box .plotly-graph-div { min-width: 760px; }
     }
     """
 
@@ -250,7 +263,7 @@ def _render_themed_shell_page(
 ) -> str:
     back_html = f'<a class="back-link" href="{back_href}">{back_label}</a>' if back_href else ""
     return f"""<!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -448,12 +461,12 @@ def _render_animation(
         rows=2,
         cols=3,
         subplot_titles=(
-            "Топ по MedCrit score (0..1)",
-            "Компоненты MedCrit по топ-планетам",
-            "Топ по тренду ухудшения",
-            "Баланс абсолютной/относительной смертности",
+            "Top MedCrit score (0..1)",
+            "MedCrit components by top planets",
+            "Top deterioration trend",
+            "Absolute vs relative mortality balance",
             "Burn20 vs fail-rate",
-            "Классификация планет (resort→slaughter)",
+            "Planet classes (resort→slaughter)",
         ),
         vertical_spacing=0.15,
         horizontal_spacing=0.08,
@@ -517,15 +530,17 @@ def _render_animation(
     fig.update_layout(
         template="plotly_dark",
         showlegend=False,
-        height=1250,
-        width=2100,
-        paper_bgcolor="rgb(14, 16, 18)",
+        autosize=True,
+        height=1120,
+        paper_bgcolor="rgba(0, 0, 0, 0)",
         plot_bgcolor="rgb(21, 24, 27)",
-        margin=dict(l=90, r=150, t=130, b=100),
+        font=dict(family="Rajdhani, sans-serif", size=15, color="#EAF6FF"),
+        margin=dict(l=72, r=48, t=138, b=138),
         title=(
-            f"MedicDivers Animated Dashboard {title_suffix}"
+            f"MedCrit Animated Dashboard {title_suffix}"
             f"<br><sup>Window: {window_seconds // 60} min | Frames: {len(run_rows)} | Last frame UTC: {str(run_rows[-1].get("timestamp", "n/a"))}</sup>"
         ),
+        title_font=dict(family="Orbitron, sans-serif", size=28, color="#EAF6FF"),
         updatemenus=[
             {
                 "type": "buttons",
@@ -533,8 +548,13 @@ def _render_animation(
                 "x": 0.0,
                 "y": 1.18,
                 "showactive": True,
+                "bgcolor": "rgba(16, 32, 46, 0.88)",
+                "bordercolor": "rgba(120, 170, 210, 0.42)",
+                "borderwidth": 1,
+                "font": {"size": 15, "color": "#EAF6FF"},
+                "pad": {"r": 10, "t": 6, "b": 6},
                 "buttons": [
-                    {"label": "Play", "method": "animate", "args": [None, {"frame": {"duration": 700, "redraw": True}, "fromcurrent": True}]},
+                    {"label": "Play", "method": "animate", "args": [None, {"frame": {"duration": 680, "redraw": True}, "fromcurrent": True}]},
                     {"label": "Pause", "method": "animate", "args": [[None], {"frame": {"duration": 0, "redraw": False}, "mode": "immediate"}]},
                 ],
             }
@@ -542,8 +562,21 @@ def _render_animation(
         sliders=[
             {
                 "active": 0,
-                "x": 0.08,
-                "len": 0.9,
+                "x": 0.06,
+                "y": -0.04,
+                "len": 0.92,
+                "thickness": 0.13,
+                "pad": {"t": 38, "b": 0},
+                "bgcolor": "rgba(18, 34, 48, 0.95)",
+                "bordercolor": "rgba(120, 170, 210, 0.45)",
+                "borderwidth": 1,
+                "font": {"size": 15, "color": "#DDEEFF"},
+                "currentvalue": {
+                    "visible": True,
+                    "prefix": "Shown time (UTC): ",
+                    "xanchor": "left",
+                    "font": {"size": 24, "color": "#F3FAFF", "family": "Orbitron, sans-serif"},
+                },
                 "steps": [
                     {
                         "label": _format_slider_time(str(fr["timestamp"])),
@@ -564,8 +597,8 @@ def _render_animation(
     fig.update_yaxes(title_text="planets", row=2, col=3)
     fig.update_yaxes(autorange="reversed", row=1, col=1)
     fig.update_yaxes(autorange="reversed", row=1, col=3)
-    fig.update_xaxes(gridcolor="rgba(140,140,140,0.25)")
-    fig.update_yaxes(gridcolor="rgba(140,140,140,0.25)")
+    fig.update_xaxes(gridcolor="rgba(140, 180, 220, 0.20)")
+    fig.update_yaxes(gridcolor="rgba(140, 180, 220, 0.20)")
 
     frames = []
     for fr in run_rows:
@@ -590,7 +623,7 @@ def _render_animation(
     plot_fragment = fig.to_html(
         include_plotlyjs="cdn",
         full_html=False,
-        config={"responsive": True, "displaylogo": False},
+        config={"responsive": True, "displaylogo": False, "scrollZoom": False},
     )
     is_archive = "archive" in output_path.parts
     asset_prefix = "../../assets" if is_archive else "assets"
@@ -639,7 +672,7 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
                 f'<a class="worker-card" href="{file_name}">'
                 f'<span class="window-badge {badge_cls}">{badge}</span>'
                 f'<span class="worker-title">Window {w // 60} min</span>'
-                f'<span class="worker-meta">Данные скоро появятся</span>'
+                f'<span class="worker-meta">Data will appear soon</span>'
                 f'</a>'
             )
         else:
@@ -647,7 +680,7 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
                 f'<div class="worker-card muted">'
                 f'<span class="window-badge {badge_cls}">{badge}</span>'
                 f'<span class="worker-title">Window {w // 60} min</span>'
-                f'<span class="worker-meta">Пока нет данных</span>'
+                f'<span class="worker-meta">No data yet</span>'
                 f'</div>'
             )
 
@@ -679,7 +712,7 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
             archive_badges.append(f'<a class="day-badge" href="archive/{day_dir.name}/index.html">{day_dir.name}</a>')
 
     index_html = f"""<!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -944,7 +977,7 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
     <section class="section">
       <h2>Archive Days</h2>
       <div class="days">
-        {''.join(archive_badges) if archive_badges else '<span class="empty">Пока пусто</span>'}
+        {''.join(archive_badges) if archive_badges else '<span class="empty">No archive days yet</span>'}
       </div>
     </section>
   </div>
