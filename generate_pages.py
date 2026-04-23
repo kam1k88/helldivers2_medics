@@ -255,6 +255,171 @@ def _format_slider_time(ts: str) -> str:
         return ts
 
 
+def _themed_shell_css() -> str:
+    return """
+    :root {
+      --bg-0: #070b12;
+      --bg-1: #0d1420;
+      --card: rgba(14, 24, 39, 0.86);
+      --border: rgba(98, 127, 170, 0.34);
+      --text: #f3f7ff;
+      --muted: #9fb1c7;
+      --accent-blue: #2f6bff;
+      --accent-red: #d7263d;
+      --accent-green: #1c773f;
+      --glow: rgba(47, 107, 255, 0.25);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: "Rajdhani", "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 14%, rgba(47,107,255,0.12), transparent 34%),
+        radial-gradient(circle at 90% 8%, rgba(28,119,63,0.10), transparent 28%),
+        radial-gradient(circle at 84% 92%, rgba(215,38,61,0.12), transparent 30%),
+        linear-gradient(145deg, var(--bg-0) 0%, var(--bg-1) 100%);
+      overflow: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: radial-gradient(circle at center, black 48%, transparent 100%);
+      opacity: 0.4;
+    }
+    .page {
+      position: relative;
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 14px;
+      padding: 16px 20px 14px;
+      z-index: 1;
+    }
+    .masthead {
+      border: 1px solid var(--border);
+      background: linear-gradient(160deg, rgba(17,26,39,0.92), rgba(10,17,27,0.88));
+      box-shadow: 0 14px 36px var(--glow), inset 0 0 0 1px rgba(255,255,255,0.03);
+      border-radius: 16px;
+      padding: 12px 16px 10px;
+      backdrop-filter: blur(4px);
+    }
+    .masthead h1 {
+      margin: 0;
+      font-size: clamp(1.15rem, 1.75vw, 1.85rem);
+      line-height: 1.2;
+      letter-spacing: 0.03em;
+      font-family: "Orbitron", "Rajdhani", sans-serif;
+      text-transform: uppercase;
+      color: #f9fcff;
+    }
+    .masthead p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: clamp(0.93rem, 1.2vw, 1.02rem);
+    }
+    .chart-card {
+      min-height: 0;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: linear-gradient(160deg, rgba(12,20,30,0.92), rgba(8,12,20,0.94));
+      box-shadow: 0 24px 70px rgba(0,0,0,0.50), inset 0 0 0 1px rgba(255,255,255,0.03);
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: 1fr;
+    }
+    .chart-wrap {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+      padding: 8px;
+    }
+    .chart-wrap > div {
+      width: 100% !important;
+      max-width: 100% !important;
+      height: 100% !important;
+    }
+    .js-plotly-plot, .plotly, .plot-container, .svg-container {
+      width: 100% !important;
+      max-width: 100% !important;
+      height: 100% !important;
+    }
+    .plotly .modebar {
+      background: rgba(12, 18, 28, 0.74) !important;
+      border: 1px solid rgba(98,127,170,0.36) !important;
+      border-radius: 12px !important;
+      padding: 2px !important;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.38);
+      right: 14px !important;
+      top: 14px !important;
+    }
+    .plotly .modebar-btn path {
+      fill: #d9e6ff !important;
+    }
+    .footer-note {
+      color: #8fa5c1;
+      font-size: 0.90rem;
+      text-align: right;
+      margin: 0 4px;
+    }
+    a.inline-link {
+      color: #9cc1ff;
+      text-decoration: none;
+    }
+    a.inline-link:hover { text-decoration: underline; }
+    """
+
+
+def _render_themed_shell_page(
+    *,
+    title: str,
+    heading: str,
+    subheading: str,
+    plot_fragment: str,
+    footer_note: str,
+    back_href: str | None = None,
+) -> str:
+    back_html = ""
+    if back_href:
+        back_html = f' · <a class="inline-link" href="{back_href}">Back</a>'
+
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{title}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>{_themed_shell_css()}</style>
+</head>
+<body>
+  <main class="page">
+    <section class="masthead">
+      <h1>{heading}</h1>
+      <p>{subheading}{back_html}</p>
+    </section>
+    <section class="chart-card">
+      <div class="chart-wrap">
+        {plot_fragment}
+      </div>
+    </section>
+    <p class="footer-note">{footer_note}</p>
+  </main>
+</body>
+</html>
+"""
+
+
 def _render_animation(
     run_rows: List[Dict[str, Any]],
     window_seconds: int,
@@ -269,15 +434,15 @@ def _render_animation(
         rows=2,
         cols=3,
         subplot_titles=(
-            "Топ по MedCrit score (0..1)",
-            "Компоненты MedCrit по топ-планетам",
-            "Топ по тренду ухудшения",
-            "Баланс абсолютной/относительной смертности",
-            "Burn20 vs fail-rate",
-            "Классификация планет (resort→slaughter)",
+            "Top MedCrit Score (0..1)",
+            "MedCrit Components (Top Planets)",
+            "Top Deterioration Trend",
+            "Absolute vs Relative Mortality Balance",
+            "Burn20 vs Mission Fail Rate",
+            "Planet Classes (resort→slaughter)",
         ),
-        vertical_spacing=0.15,
-        horizontal_spacing=0.08,
+        vertical_spacing=0.14,
+        horizontal_spacing=0.07,
     )
 
     fig.add_trace(go.Bar(x=first_payload["medcrit_x"], y=first_payload["medcrit_y"], orientation="h", marker=dict(color=first_payload["medcrit_colors"])), row=1, col=1)
@@ -338,25 +503,33 @@ def _render_animation(
     fig.update_layout(
         template="plotly_dark",
         showlegend=False,
-        height=1250,
-        width=2100,
+        autosize=True,
+        height=920,
         paper_bgcolor="rgb(14, 16, 18)",
         plot_bgcolor="rgb(21, 24, 27)",
-        margin=dict(l=90, r=150, t=130, b=100),
+        margin=dict(l=88, r=130, t=128, b=110),
         title=(
-            f"MedicDivers Animated Dashboard {title_suffix}"
+            f"MedCrit Animated Dashboard {title_suffix}"
             f"<br><sup>Window: {window_seconds // 60} min | Frames: {len(run_rows)} | Updated UTC: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}</sup>"
         ),
+        title_font=dict(family="Orbitron, Rajdhani, sans-serif", size=30, color="#f5f9ff"),
+        font=dict(family="Rajdhani, Segoe UI, sans-serif", size=14, color="#eaf0ff"),
+        hoverlabel=dict(bgcolor="rgba(7,10,15,0.95)", bordercolor="#2f6bff", font=dict(color="#f4f7ff", size=13)),
         updatemenus=[
             {
                 "type": "buttons",
                 "direction": "left",
                 "x": 0.0,
-                "y": 1.18,
+                "y": 1.17,
                 "showactive": True,
+                "pad": {"t": 6, "r": 8},
+                "font": {"family": "Rajdhani, sans-serif", "size": 16, "color": "#f8fbff"},
+                "bgcolor": "rgba(17,30,48,0.86)",
+                "bordercolor": "#2f6bff",
+                "borderwidth": 2,
                 "buttons": [
-                    {"label": "Play", "method": "animate", "args": [None, {"frame": {"duration": 700, "redraw": True}, "fromcurrent": True}]},
-                    {"label": "Pause", "method": "animate", "args": [[None], {"frame": {"duration": 0, "redraw": False}, "mode": "immediate"}]},
+                    {"label": "Play ▶", "method": "animate", "args": [None, {"frame": {"duration": 700, "redraw": True}, "fromcurrent": True}]},
+                    {"label": "Pause ⏸", "method": "animate", "args": [[None], {"frame": {"duration": 0, "redraw": False}, "mode": "immediate"}]},
                 ],
             }
         ],
@@ -365,6 +538,31 @@ def _render_animation(
                 "active": 0,
                 "x": 0.08,
                 "len": 0.9,
+                "y": -0.01,
+                "pad": {"t": 58, "b": 0},
+                "bgcolor": "rgba(17,30,48,0.65)",
+                "activebgcolor": "#d7263d",
+                "bordercolor": "#2f6bff",
+                "borderwidth": 2,
+                "ticklen": 8,
+                "tickwidth": 2,
+                "tickcolor": "#9fb7ff",
+                "currentvalue": {
+                    "visible": True,
+                    "prefix": "Shown time (UTC): ",
+                    "font": {
+                        "family": "Orbitron, Rajdhani, sans-serif",
+                        "size": 27,
+                        "color": "#f8fcff",
+                    },
+                    "xanchor": "left",
+                    "offset": 14,
+                },
+                "font": {
+                    "family": "Rajdhani, sans-serif",
+                    "size": 13,
+                    "color": "#d6e3fb",
+                },
                 "steps": [
                     {
                         "label": _format_slider_time(str(fr["timestamp"])),
@@ -376,13 +574,13 @@ def _render_animation(
             }
         ],
     )
-    fig.update_xaxes(range=[0, 1], title_text="medcrit score", row=1, col=1)
-    fig.update_xaxes(range=[0, 1], title_text="trend", row=1, col=3)
+    fig.update_xaxes(range=[0, 1], title_text="MedCrit score", row=1, col=1)
+    fig.update_xaxes(range=[0, 1], title_text="Trend component", row=1, col=3)
     fig.update_xaxes(title_text="deaths/min", row=2, col=1)
     fig.update_yaxes(title_text="deaths/100 players/min", row=2, col=1)
     fig.update_xaxes(range=[0, 1], title_text="burn20", row=2, col=2)
-    fig.update_yaxes(range=[0, 1], title_text="fail-rate", row=2, col=2)
-    fig.update_yaxes(title_text="planets", row=2, col=3)
+    fig.update_yaxes(range=[0, 1], title_text="mission fail rate", row=2, col=2)
+    fig.update_yaxes(title_text="Planets", row=2, col=3)
     fig.update_yaxes(autorange="reversed", row=1, col=1)
     fig.update_yaxes(autorange="reversed", row=1, col=3)
     fig.update_xaxes(gridcolor="rgba(140,140,140,0.25)")
@@ -408,7 +606,37 @@ def _render_animation(
     fig.frames = frames
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.write_html(str(output_path), include_plotlyjs="cdn", full_html=True)
+    plot_id = f"medcrit-plot-{window_seconds}"
+    plot_html = fig.to_html(
+        include_plotlyjs="cdn",
+        full_html=False,
+        div_id=plot_id,
+        default_width="100%",
+        default_height="100%",
+        config={"responsive": True, "scrollZoom": False, "displaylogo": False},
+        post_script="""
+const _plot = document.getElementById('{plot_id}');
+function _fitPlotHeight() {
+  if (!_plot || typeof Plotly === 'undefined') return;
+  const h = Math.max(560, window.innerHeight - 220);
+  Plotly.relayout(_plot, {height: h});
+}
+_fitPlotHeight();
+window.addEventListener('resize', _fitPlotHeight);
+""",
+    )
+    page = _render_themed_shell_page(
+        title=f"MedCrit Animation {window_seconds // 60} min",
+        heading="MedCrit Animated Dashboard",
+        subheading=(
+            f"Window: {window_seconds // 60} min · Frames: {len(run_rows)} · "
+            f"Updated (UTC): {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}"
+        ),
+        plot_fragment=plot_html,
+        footer_note="Timeline slider shows the active frame in UTC. Use Play/Pause for continuous replay.",
+        back_href="index.html",
+    )
+    output_path.write_text(page, encoding="utf-8")
 
 
 def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, Any]]], now_utc: str, day_local: str) -> None:
@@ -425,9 +653,9 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
     for w in WINDOWS:
         file_name = f"animation_{w}_today.html"
         if (PUBLIC_DIR / file_name).exists():
-            links.append(f'<li><a href="{file_name}">Worker {w//60} min (today)</a></li>')
+            links.append(f'<li><a href="{file_name}">Window {w//60} min (today)</a></li>')
         else:
-            links.append(f"<li>Worker {w//60} min (today): пока нет данных</li>")
+            links.append(f"<li>Window {w//60} min (today): no data yet</li>")
 
     archive_links = []
     archive_pub = PUBLIC_DIR / "archive"
@@ -436,33 +664,51 @@ def _render_worker_today_pages(today_rows_by_window: Dict[int, List[Dict[str, An
             archive_links.append(f'<li><a href="archive/{day_dir.name}/index.html">{day_dir.name}</a></li>')
 
     index_html = f"""<!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>MedicDivers Pages Dashboard</title>
+  <title>MedCrit Pages Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
   <style>
-    body {{ font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; background:#0e1116; color:#f0f3f6; }}
-    a {{ color:#6cb6ff; text-decoration:none; }}
+    {_themed_shell_css()}
+    body {{ overflow:auto; min-height:100%; }}
+    .page {{ height: auto; min-height:100vh; grid-template-rows: auto auto auto; }}
+    .stack {{ display:grid; gap:14px; }}
+    .box {{
+      border: 1px solid var(--border);
+      background: linear-gradient(160deg, rgba(17,26,39,0.92), rgba(10,17,27,0.88));
+      box-shadow: 0 14px 36px var(--glow), inset 0 0 0 1px rgba(255,255,255,0.03);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }}
+    h2 {{ margin:0 0 8px; font-family:"Orbitron","Rajdhani",sans-serif; letter-spacing:0.03em; }}
+    ul {{ margin: 0; padding-left: 20px; }}
+    li {{ margin: 6px 0; color: #d9e5f8; }}
+    a {{ color:#9cc1ff; text-decoration:none; }}
     a:hover {{ text-decoration:underline; }}
-    .box {{ border:1px solid #2f3b4a; padding:1rem; border-radius:10px; margin-top:1rem; background:#141a23; }}
   </style>
 </head>
 <body>
-  <h1>MedicDivers: Daily Animated Dashboards</h1>
-  <p>Timezone: {TZ_NAME} | Current local day: {day_local} | Updated (UTC): {now_utc}</p>
-  <div class="box">
-    <h2>Today</h2>
-    <ul>
-      {''.join(links)}
-    </ul>
-  </div>
-  <div class="box">
-    <h2>Archive</h2>
-    <ul>
-      {''.join(archive_links) if archive_links else '<li>Пока пусто</li>'}
-    </ul>
-  </div>
+  <main class="page">
+    <section class="masthead">
+      <h1>MedCrit Daily Animated Dashboards</h1>
+      <p>Timezone: {TZ_NAME} · Current local day: {day_local} · Updated (UTC): {now_utc}</p>
+    </section>
+    <section class="stack">
+      <div class="box">
+        <h2>Today</h2>
+        <ul>{''.join(links)}</ul>
+      </div>
+      <div class="box">
+        <h2>Archive</h2>
+        <ul>{''.join(archive_links) if archive_links else '<li>No archive days yet</li>'}</ul>
+      </div>
+    </section>
+    <p class="footer-note">Select a window to open the themed animated dashboard.</p>
+  </main>
 </body>
 </html>
 """
@@ -482,16 +728,57 @@ def _publish_archive_to_public(tz: ZoneInfo) -> None:
         dst.mkdir(parents=True, exist_ok=True)
         links = []
         for w in WINDOWS:
-            src_anim = day_dir / f"animation_{w}.html"
-            if src_anim.exists():
-                shutil.copy2(src_anim, dst / f"animation_{w}.html")
-                links.append(f'<li><a href="animation_{w}.html">Worker {w//60} min</a></li>')
-        idx = f"""<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Archive {day_dir.name}</title></head>
-<body style="font-family: sans-serif; max-width:800px; margin:2rem auto;">
-<h1>Archive {day_dir.name}</h1>
-<ul>{''.join(links) if links else '<li>Нет файлов</li>'}</ul>
-<p><a href="../..">Back</a></p>
-</body></html>"""
+            runs_file = day_dir / f"runs_{w}.jsonl"
+            rows = _read_jsonl(runs_file)
+            if rows:
+                _render_animation(
+                    rows,
+                    window_seconds=w,
+                    output_path=dst / f"animation_{w}.html",
+                    title_suffix=f"(archive {day_dir.name})",
+                )
+                links.append(f'<li><a href="animation_{w}.html">Window {w//60} min</a></li>')
+        idx = f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Archive {day_dir.name}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    {_themed_shell_css()}
+    body {{ overflow:auto; min-height:100%; }}
+    .page {{ height:auto; min-height:100vh; grid-template-rows:auto auto auto; }}
+    .box {{
+      border: 1px solid var(--border);
+      background: linear-gradient(160deg, rgba(17,26,39,0.92), rgba(10,17,27,0.88));
+      box-shadow: 0 14px 36px var(--glow), inset 0 0 0 1px rgba(255,255,255,0.03);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }}
+    h2 {{ margin:0 0 8px; font-family:"Orbitron","Rajdhani",sans-serif; letter-spacing:0.03em; }}
+    ul {{ margin: 0; padding-left: 20px; }}
+    li {{ margin: 6px 0; color: #d9e5f8; }}
+    a {{ color:#9cc1ff; text-decoration:none; }}
+    a:hover {{ text-decoration:underline; }}
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="masthead">
+      <h1>Archive {day_dir.name}</h1>
+      <p>Choose a time window to open the archived animation.</p>
+    </section>
+    <section class="box">
+      <h2>Windows</h2>
+      <ul>{''.join(links) if links else '<li>No files</li>'}</ul>
+    </section>
+    <p class="footer-note"><a class="inline-link" href="../..">Back to home</a></p>
+  </main>
+</body>
+</html>"""
         (dst / "index.html").write_text(idx, encoding="utf-8")
 
 
