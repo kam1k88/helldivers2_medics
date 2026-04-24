@@ -377,7 +377,7 @@ def _render_animation(
             {
                 "type": "buttons",
                 "direction": "left",
-                "x": 0.005,
+                "x": 0.001,
                 "y": -0.16,
                 "xanchor": "left",
                 "yanchor": "top",
