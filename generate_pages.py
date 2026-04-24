@@ -287,23 +287,6 @@ def _render_animation(
         return
 
     assets_rel = os.path.relpath(PUBLIC_DIR / "assets", output_path.parent).replace("\\", "/")
-    all_active_items = [
-        item
-        for fr in run_rows
-        for item in fr.get("items", [])
-        if int(item.get("players_now", 0)) > 0
-    ]
-    max_dpm = max((float(x.get("deaths_per_min", 0.0)) for x in all_active_items), default=1.0)
-    max_rel = max((float(x.get("deaths_per_100_players_min", 0.0)) for x in all_active_items), default=1.0)
-    class_names = ("resort", "control", "problematic", "tough", "slaughter")
-    max_class_count = 1
-    for fr in run_rows:
-        active = [x for x in fr.get("items", []) if int(x.get("players_now", 0)) > 0]
-        if not active:
-            continue
-        frame_max = max(sum(1 for x in active if str(x.get("medcrit_label", "")) == cls) for cls in class_names)
-        max_class_count = max(max_class_count, frame_max)
-
     first_payload = _build_frame_payload(run_rows[0]["items"], TOP_N)
     fig = make_subplots(
         rows=2,
@@ -383,7 +366,6 @@ def _render_animation(
         paper_bgcolor="rgb(14, 16, 18)",
         plot_bgcolor="rgb(21, 24, 27)",
         margin=dict(l=84, r=120, t=120, b=164),
-        uirevision="medcrit-animation",
         title=(
             f"MedCrit Animated Dashboard {title_suffix}"
             f"<br><sup>Window: {window_seconds // 60} min | Frames: {len(run_rows)} | Last frame UTC: {str(run_rows[-1].get("timestamp", "n/a"))}</sup>"
@@ -395,30 +377,19 @@ def _render_animation(
             {
                 "type": "buttons",
                 "direction": "left",
-                "x": 0.08,
+                "x": 0.005,
                 "y": -0.16,
                 "xanchor": "left",
                 "yanchor": "top",
                 "showactive": False,
+                "active": -1,
                 "pad": {"t": 4, "r": 8},
                 "font": {"family": "Rajdhani, sans-serif", "size": 16, "color": "#f7fbff"},
                 "bgcolor": "rgba(19,37,54,0.9)",
                 "bordercolor": "rgba(110, 212, 255, 0.65)",
                 "borderwidth": 2,
                 "buttons": [
-                    {
-                        "label": "Play ▶",
-                        "method": "animate",
-                        "args": [
-                            None,
-                            {
-                                "mode": "immediate",
-                                "frame": {"duration": 700, "redraw": False},
-                                "transition": {"duration": 220, "easing": "linear"},
-                                "fromcurrent": True,
-                            },
-                        ],
-                    },
+                    {"label": "Play ▶", "method": "animate", "args": [None, {"frame": {"duration": 700, "redraw": True}, "fromcurrent": True}]},
                     {"label": "Pause ⏸", "method": "animate", "args": [[None], {"frame": {"duration": 0, "redraw": False}, "mode": "immediate"}]},
                 ],
             }
@@ -449,7 +420,7 @@ def _render_animation(
                     {
                         "label": _format_slider_time(str(fr["timestamp"])),
                         "method": "animate",
-                        "args": [[str(fr["timestamp"])], {"mode": "immediate", "frame": {"duration": 0, "redraw": False}, "transition": {"duration": 0}}],
+                        "args": [[str(fr["timestamp"])], {"mode": "immediate", "frame": {"duration": 0, "redraw": True}}],
                     }
                     for fr in run_rows
                 ],
@@ -458,17 +429,15 @@ def _render_animation(
     )
     fig.update_xaxes(range=[0, 1], title_text="MedCrit score", row=1, col=1)
     fig.update_xaxes(range=[0, 1], title_text="trend", row=1, col=3)
-    fig.update_xaxes(range=[0, max(1.0, max_dpm * 1.08)], title_text="deaths/min", row=2, col=1)
-    fig.update_yaxes(range=[0, max(1.0, max_rel * 1.08)], title_text="deaths/100 players/min", row=2, col=1)
+    fig.update_xaxes(title_text="deaths/min", row=2, col=1)
+    fig.update_yaxes(title_text="deaths/100 players/min", row=2, col=1)
     fig.update_xaxes(range=[0, 1], title_text="burn20", row=2, col=2)
     fig.update_yaxes(range=[0, 1], title_text="mission fail rate", row=2, col=2)
-    fig.update_yaxes(range=[0, max(1.0, float(max_class_count) * 1.12)], title_text="planets", row=2, col=3)
+    fig.update_yaxes(title_text="planets", row=2, col=3)
     fig.update_yaxes(autorange="reversed", row=1, col=1)
     fig.update_yaxes(autorange="reversed", row=1, col=3)
     fig.update_xaxes(gridcolor="rgba(140,140,140,0.25)")
     fig.update_yaxes(gridcolor="rgba(140,140,140,0.25)")
-    fig.update_xaxes(automargin=False, fixedrange=True)
-    fig.update_yaxes(automargin=False, fixedrange=True)
 
     frames = []
     for fr in run_rows:
