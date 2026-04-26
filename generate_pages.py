@@ -23,7 +23,6 @@ WINDOWS = [300, 900, 1800]
 TOP_N = int(os.getenv("PAGES_TOP_N", "12"))
 TZ_NAME = os.getenv("PAGES_TZ", "UTC")
 ARCHIVE_DAYS_TO_PUBLISH = int(os.getenv("PAGES_ARCHIVE_DAYS_TO_PUBLISH", "30"))
-UPDATE_GRACE_SECONDS = int(os.getenv("PAGES_UPDATE_GRACE_SECONDS", "180"))
 
 DATA_DIR = Path(".pages_data")
 PUBLIC_DIR = Path("public")
@@ -61,11 +60,35 @@ def _safe_div(n: float, d: float) -> float:
     return 0.0 if d == 0 else n / d
 
 
-def _should_refresh_window(now_dt: datetime, window_seconds: int) -> bool:
-    if window_seconds <= 300:
+def _should_refresh_window(
+    now_dt: datetime,
+    window_seconds: int,
+    history_rows: List[Dict[str, Any]],
+) -> bool:
+    """Refresh based on last successful sample time, not wall-clock phase.
+
+    This avoids missed 15/30-minute updates when Actions runs are delayed.
+    """
+    target_interval = max(300, int(window_seconds))
+    if not history_rows:
         return True
-    phase = int(now_dt.timestamp()) % int(window_seconds)
-    return phase <= UPDATE_GRACE_SECONDS
+
+    last_ts: datetime | None = None
+    for row in reversed(history_rows):
+        try:
+            ts = _parse_ts(str(row.get("timestamp", "")))
+        except Exception:
+            continue
+        last_ts = ts
+        break
+
+    if last_ts is None:
+        return True
+
+    elapsed = (now_dt - last_ts).total_seconds()
+    if elapsed < 0:
+        return False
+    return elapsed >= (target_interval - 1)
 
 
 def _write_json(path: Path, payload: Any) -> None:
@@ -1182,7 +1205,7 @@ def main() -> int:
         history_rows = _read_jsonl(_history_file(w))
         history_rows = [r for r in history_rows if _local_day(str(r.get("timestamp", "")), tz) == current_day]
 
-        if base is not None and _should_refresh_window(now_utc_dt, w):
+        if base is not None and _should_refresh_window(now_utc_dt, w, history_rows):
             old_snap = _snapshot_from_payload(base["snapshots"])
             elapsed = max(1.0, (now_utc_dt - _parse_ts(str(base["timestamp"]))).total_seconds())
             priorities = core.build_priorities(old_snap, curr_snap, elapsed, state_file=str(_state_file(w)))
