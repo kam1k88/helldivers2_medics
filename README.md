@@ -1,5 +1,31 @@
 # medicdivers_service
 
+
+
+
+## Локальный запуск без Docker (macOS + Windows)
+
+macOS (iMac):
+```bash
+chmod +x scripts/start_mac.sh
+./scripts/start_mac.sh
+```
+
+Windows (PowerShell):
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start_windows.ps1
+```
+
+После старта API:
+- `http://127.0.0.1:8000/health`
+- `http://127.0.0.1:8000/api/v1/windows`
+
+Оба скрипта автоматически:
+- создают `.venv` при отсутствии,
+- ставят зависимости из `requirements.txt`,
+- запускают API `rest_api.py`,
+- включают `PYTHONUTF8=1` для корректного вывода Unicode в консоль.
+
 Скрипт при запуске:
 1. Запрашивает текущую статистику планет Helldivers 2.
 2. Ждёт окно наблюдения (`SAMPLE_SECONDS`).
@@ -61,15 +87,18 @@ cd /Users/franceballin/PycharmProjects/medicdivers_service
 ## Деплой через GitHub Actions (бесплатно)
 
 В проект добавлен workflow:
-- `.github/workflows/publish_dashboard.yml`
+- `.github/workflows/publish_dashboard_v2.yml`
 - `generate_pages.py`
 
 Он:
-- запускается вручную (`workflow_dispatch`) и по расписанию (`каждые 5 минут`),
+- запускается вручную (`workflow_dispatch`) и по расписанию (`каждые 6 минут`),
 - работает как 3 виртуальных "воркера" по окнам `5/15/30` минут (`300/900/1800`),
 - генерирует для каждого окна анимированный дашборд из 6 графиков только за текущий день,
 - при смене дня архивирует вчерашние анимации и историю в `.pages_data/archive/<YYYY-MM-DD>/`,
-- публикует итоговый сайт в GitHub Pages из директории `public/`.
+- публикует итоговый сайт в GitHub Pages из директории `public/`,
+- пропускает commit state, если апдейт пустой,
+- пишет build summary в `GitHub Step Summary`,
+- создаёт alert issue при падении workflow.
 
 Шаги настройки:
 1. Запушь проект в GitHub-репозиторий.
