@@ -1,5 +1,12 @@
 # medicdivers_service
 
+## Что улучшено
+
+- Добавлены локальные скрипты запуска в корне репозитория: `start_mac.sh`, `start_windows.ps1`.
+- Локальный запуск работает независимо от GitHub Actions (две параллельные модели запуска).
+- Workflow `publish_dashboard_v2.yml` усилен: `concurrency`, `timeout`, `build summary`, `failure alert issue`.
+- Пустые state-коммиты подавляются: `.pages_data` коммитится только если реально обновились окна (`refreshed_windows != ''`).
+
 
 
 
