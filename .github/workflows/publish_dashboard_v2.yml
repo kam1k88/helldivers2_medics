@@ -74,7 +74,7 @@ jobs:
           fi
 
       - name: Commit data/state for next runs
-        if: steps.detect_changes.outputs.has_state_changes == 'true'
+        if: steps.detect_changes.outputs.has_state_changes == 'true' && steps.build_dashboard.outputs.refreshed_windows != ''
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -82,8 +82,8 @@ jobs:
           git push origin HEAD:${{ github.ref_name }}
 
       - name: Skip state commit on empty update
-        if: steps.detect_changes.outputs.has_state_changes != 'true'
-        run: echo "No state updates detected; skipping commit."
+        if: steps.detect_changes.outputs.has_state_changes != 'true' || steps.build_dashboard.outputs.refreshed_windows == ''
+        run: echo "No meaningful window refresh detected; skipping state commit."
 
       - name: Upload Pages artifact
         if: steps.detect_changes.outputs.has_public_changes == 'true'
