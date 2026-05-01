@@ -3,7 +3,7 @@
 
 
 
-## Локальный запуск без Docker (macOS + Windows)
+## Локальный запуск без GitHub Actions (macOS + Windows)
 
 macOS (iMac):
 ```bash
