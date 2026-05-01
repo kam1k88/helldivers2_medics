@@ -7,13 +7,13 @@
 
 macOS (iMac):
 ```bash
-chmod +x scripts/start_mac.sh
-./scripts/start_mac.sh
+chmod +x start_mac.sh
+./start_mac.sh
 ```
 
 Windows (PowerShell):
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\start_windows.ps1
+powershell -ExecutionPolicy Bypass -File .\start_windows.ps1
 ```
 
 После старта API:
